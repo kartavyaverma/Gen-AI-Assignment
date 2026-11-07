@@ -1,0 +1,295 @@
+{
+  "A": [
+    {
+      "id": "A1",
+      "desc": "ingredient normalisation & allergen exceptions",
+      "pass": true,
+      "detail": "all normalisation cases ok",
+      "secs": 0.0
+    },
+    {
+      "id": "A2",
+      "desc": "step counting removes duplicated/boilerplate lines",
+      "pass": true,
+      "detail": "7,129 Epicurious recipes had duplicated method lines; e.g. epi_05zEpbSqcs9E0rcnCJWyZ9OgdH0MLby: 2 raw lines -> 1 steps",
+      "secs": 0.13
+    },
+    {
+      "id": "A3",
+      "desc": "garlic AND onion count == independent numpy recomputation",
+      "pass": true,
+      "detail": "bot=15,974 manual=15,974 (12.99% of 122,931); broad rule=20,244",
+      "secs": 1.88
+    },
+    {
+      "id": "A4",
+      "desc": "fewest-steps ranking is sorted and starts at the true minimum",
+      "pass": true,
+      "detail": "steps=[1, 1, 1, 1, 1], true minimum over 13,781 tomato recipes=1",
+      "secs": 0.15
+    },
+    {
+      "id": "A5",
+      "desc": "'no dairy' filter excludes every dairy-flagged recipe",
+      "pass": true,
+      "detail": "717 eligible penne results, 0 dairy leaks",
+      "secs": 0.04
+    },
+    {
+      "id": "A6",
+      "desc": "pantry match respects no-peanuts / <=6 steps and ranks by ingredients used",
+      "pass": true,
+      "detail": "top-5 used counts [4, 4, 4, 4, 4], steps [5, 3, 2, 3, 3]",
+      "secs": 1.0
+    },
+    {
+      "id": "A7",
+      "desc": "'exclude eggs too' removes eggs from pantry AND results",
+      "pass": true,
+      "detail": "pantry now ['onion', 'tomato', 'rice']; no egg in any result",
+      "secs": 0.23
+    },
+    {
+      "id": "A8",
+      "desc": "no-match case is reported, never silently relaxed",
+      "pass": true,
+      "detail": "no-match reported; alternatives shown separately and labelled as violations",
+      "secs": 0.4
+    },
+    {
+      "id": "A9",
+      "desc": "egg substitution cites real egg-free recipes; co-occurrence isn't treated as evidence",
+      "pass": true,
+      "detail": "best=yogurt (evidence: limited); cited 2 egg-free recipes, all verified egg-free; banana correctly marked 'co-occurs only'",
+      "secs": 7.23
+    },
+    {
+      "id": "A10",
+      "desc": "dairy-free cream swap never picks dairy and flags leftover dairy lines",
+      "pass": true,
+      "detail": "recipe fn_7XHa/jzELyj6nhcXaRChTkp032PQMp2; best=broth thickened with cornstarch; still-violating lines flagged: ['Grated Parmesan and basil leaves, for garnish']; rejected=none",
+      "secs": 7.34
+    },
+    {
+      "id": "A11",
+      "desc": "substitution of an absent ingredient is refused, not invented",
+      "pass": true,
+      "detail": "asking to replace an ingredient the recipe doesn't have is refused",
+      "secs": 0.12
+    }
+  ],
+  "B": [
+    {
+      "id": "C1_search_followups",
+      "task": "Task 1 - search + multi-turn refinement",
+      "turns": [
+        {
+          "turn": 1,
+          "user": "Find a penne pasta recipe",
+          "pass": true,
+          "fails": [],
+          "intent": "search"
+        },
+        {
+          "turn": 2,
+          "user": "I cannot have dairy",
+          "pass": true,
+          "fails": [],
+          "intent": "search"
+        },
+        {
+          "turn": 3,
+          "user": "Show me the ingredients and instructions for the second one",
+          "pass": true,
+          "fails": [],
+          "intent": "show_recipe"
+        },
+        {
+          "turn": 4,
+          "user": "How many calories does that have?",
+          "pass": true,
+          "fails": [],
+          "intent": "unsupported"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "C2_aggregate_stats",
+      "task": "Task 1 - aggregate statistics",
+      "turns": [
+        {
+          "turn": 1,
+          "user": "How many recipes contain both garlic and onion? What percentage of the dataset is that?",
+          "pass": true,
+          "fails": [],
+          "intent": "stats"
+        },
+        {
+          "turn": 2,
+          "user": "Among recipes containing tomato, which five have the fewest instruction steps?",
+          "pass": true,
+          "fails": [],
+          "intent": "stats"
+        },
+        {
+          "turn": 3,
+          "user": "What's the average and median number of ingredients per recipe? Break it down by source.",
+          "pass": true,
+          "fails": [],
+          "intent": "stats"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "C3_pantry_matching",
+      "task": "Task 2 - ingredient matching with hard constraints + follow-up",
+      "turns": [
+        {
+          "turn": 1,
+          "user": "I have eggs, onions, tomatoes, and rice. Suggest five recipes using as many of these as possible, with no peanuts and at most six instruction steps. Prefer recipes that need the fewest additional ingredients.",
+          "pass": true,
+          "fails": [],
+          "intent": "match"
+        },
+        {
+          "turn": 2,
+          "user": "Exclude eggs too",
+          "pass": true,
+          "fails": [],
+          "intent": "match"
+        },
+        {
+          "turn": 3,
+          "user": "Actually rank them by fewest steps instead",
+          "pass": true,
+          "fails": [],
+          "intent": "match"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "C4_no_match",
+      "task": "Task 1 + Task 2 - no-match cases",
+      "turns": [
+        {
+          "turn": 1,
+          "user": "I have lobster, mango and dark chocolate. I need a dairy-free recipe that uses all three, with at most 4 steps.",
+          "pass": true,
+          "fails": [],
+          "intent": "match"
+        },
+        {
+          "turn": 2,
+          "user": "Forget that. Find me a beef stew.",
+          "pass": true,
+          "fails": [],
+          "intent": "search"
+        },
+        {
+          "turn": 3,
+          "user": "I'm vegan.",
+          "pass": true,
+          "fails": [],
+          "intent": "search"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "C5_substitution_eggs",
+      "task": "Task 3 - substitution with limited evidence",
+      "turns": [
+        {
+          "turn": 1,
+          "user": "Find a banana bread recipe",
+          "pass": true,
+          "fails": [],
+          "intent": "search"
+        },
+        {
+          "turn": 2,
+          "user": "Take this banana bread recipe and remove the eggs. Use only ingredients that appear in the dataset. What replacements have evidence from related baked recipes, and how might the texture change?",
+          "pass": true,
+          "fails": [],
+          "intent": "substitute"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "C6_substitution_dairy_weak",
+      "task": "Task 3 - substitution with weak / conflicting evidence and a hard restriction",
+      "turns": [
+        {
+          "turn": 1,
+          "user": "Show me a creamy penne pasta recipe that uses heavy cream",
+          "pass": true,
+          "fails": [],
+          "intent": "search"
+        },
+        {
+          "turn": 2,
+          "user": "Replace the cream in this pasta recipe without dairy. Prefer examples from recipes already in the database.",
+          "pass": true,
+          "fails": [],
+          "intent": "substitute"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "C7_unsupported_and_reset",
+      "task": "Cross-cutting - refusing unsupported questions",
+      "turns": [
+        {
+          "turn": 1,
+          "user": "What is the healthiest, lowest-calorie lasagna in the dataset?",
+          "pass": true,
+          "fails": [],
+          "intent": "unsupported"
+        },
+        {
+          "turn": 2,
+          "user": "Start over",
+          "pass": true,
+          "fails": [],
+          "intent": "reset"
+        }
+      ],
+      "pass": true
+    }
+  ],
+  "C": [
+    {
+      "id": "B1",
+      "question": "How many recipes in the Recipe Box dataset (Allrecipes, Epicurious and Food Network recipes) contain both garlic and onion? What percentage of the dataset is that?",
+      "one_shot": "I’m afraid I don’t have the exact counts for the **Recipe Box** collection on hand, because the dataset isn’t built into the model and I can’t query it directly.  \nHowever, you can obtain the precise numbers yourself in just a few minutes with a little bit of Python (or any other data‑analysis tool). Below is a step‑by‑step guide, plus a rough sense of what you might expect based on similar food‑corpus analyses.\n\n---\n\n## 1. What you’ll need\n\n| Item | Why it’s needed |\n|------|-----------------|\n| **The Recipe Box CSV/JSON files** (or a single combined file) | Contains the recipe metadata and ingredient lists. |\n| **Python 3.x** with `pandas` (and optionally `tqdm` for progress bars) | Makes filtering and counting trivial. |\n| **A text‑search‑friendly representation of ingredients** (usually a single string per recipe) | Allows us to look for the words “garlic” and “onion”. |\n\nIf the dataset is split into three files (Allrecipes, Epicurious, Food Network), just concatenate them first.\n\n---\n\n## 2. Minimal reproducible script\n\n```python\nimport pandas as pd\nfrom pathlib import Path\n\n# -------------------------------------------------\n# 1️⃣  Load the data\n# -------------------------------------------------\n# Adjust the path / filenames to match your local layout.\n# The dataset is often provided as a CSV with a column called \"ingredients\"\n# that contains a list‑like string (e.g. \"['garlic', 'onion', 'tomato']\").\ndata_files = [\n    Path(\"allrecipes.csv\"),\n    Path(\"epicurious.csv\"),\n    Path(\"food_network.csv\")\n]\n\n# Read each file and concatenate\ndf_list = [pd.read_csv(f) for f in data_files]\ndf = pd.concat(df_list, ignore_index=True)\n\n# -------------------------------------------------\n# 2️⃣  Normalise the ingredient column\n# -------------------------------------------------\n# The column name may differ – common names are \"ingredients\", \"ingredient_list\", etc.\nING_COL = \"ingredients\"          # <-- change if needed\nif ING_COL not in df.columns:\n    raise KeyError(f\"Column '{ING_COL}' not found. Available columns: {df.columns.tolist()}\")\n\n# Turn everything to lower‑case and strip punctuation for reliable matching\ndef clean_ingredients(text):\n    if pd.isna(text):\n        return \"\"\n    # If the column already holds a Python list (as a string), eval it safely:\n    #   e.g. \"['garlic', 'onion']\"\n    # If it’s a plain string like \"garlic, onion, tomato\", we just split on commas.\n    # The function below works for both cases.\n    import ast, re\n    try:\n        items = ast.literal_eval(text)\n        if isinstance(items, (list, tuple)):\n            tokens = [str(i) for i in items]\n        else:\n            tokens = [str(items)]\n   ",
+      "grounded_answer": "15,974 recipes = 12.99% of 122,931 (strict); 20,244 with the loose any-mention rule",
+      "verdict": "declined to answer (it can't see the data) and only offered code or a guess - honest, but the user gets no answer; RecipeBot computes it"
+    },
+    {
+      "id": "B2",
+      "question": "In the Recipe Box dataset, among recipes containing tomato, which five have the fewest instruction steps? Give their recipe IDs.",
+      "one_shot": "I’m not able to look inside the Recipe Box data files directly, so I can’t pull the exact recipe IDs for you right now. However, you can retrieve the five “tomato” recipes with the fewest instruction steps in just a few lines of code if you have the CSV/JSON files that make up the dataset.\n\nBelow is a complete, ready‑to‑run Python snippet (using **pandas**) that will:\n\n1. Load the recipes table (replace `recipes.csv` with the actual filename or path).  \n2. Filter to only those recipes whose ingredient list mentions **tomato** (case‑insensitive).  \n3. Count the number of instruction steps for each recipe.  \n4. Sort by that count (ascending) and return the top 5 recipe IDs.\n\n```python\nimport pandas as pd\nimport re\n\n# -------------------------------------------------\n# 1️⃣  Load the data\n# -------------------------------------------------\n# Adjust the filename / path as needed (CSV, JSON, Parquet, etc.)\nrecipes = pd.read_csv('recipes.csv')          # <-- change if you have a different format\n# Expected columns (at minimum):\n#   - recipe_id          (unique identifier)\n#   - ingredients        (list or string of ingredient names)\n#   - instructions       (list of step strings OR a single string with delimiters)\n\n# -------------------------------------------------\n# 2️⃣  Helper: turn the ingredients column into a searchable string\n# -------------------------------------------------\ndef ingredients_to_text(ing):\n    \"\"\"Convert whatever format the ingredients column uses into a plain string.\"\"\"\n    if isinstance(ing, str):\n        return ing.lower()\n    # If it's a list/JSON string, try to eval it safely\n    try:\n        # ast.literal_eval handles things like \"['tomato', 'onion']\"\n        import ast\n        ing_list = ast.literal_eval(ing)\n        if isinstance(ing_list, (list, tuple)):\n            return ' '.join(map(str, ing_list)).lower()\n    except Exception:\n        pass\n    return str(ing).lower()\n\nrecipes['ingredients_text'] = recipes['ingredients'].apply(ingredients_to_text)\n\n# -------------------------------------------------\n# 3️⃣  Filter for recipes that contain “tomato”\n# -------------------------------------------------\ntomato_mask = recipes['ingredients_text'].str.contains(r'\\btomato\\b')\ntomato_recipes = recipes[tomato_mask].copy()\n\n# -------------------------------------------------\n# 4️⃣  Count instruction steps\n# -------------------------------------------------\ndef count_steps(instr):\n    \"\"\"Return the number of steps in the instructions field.\"\"\"\n    if isinstance(instr, list):\n        return len(instr)\n    if isinstance(instr, str):\n        # Common delimiters: newline, period followed by a number, etc.\n        # Try to split on newline first; if that yields 1, fall back to period.\n        parts = [s.strip() for s in instr.split('\\n') if s.strip()]\n        if len(parts) ==",
+      "grounded_answer": "ar_uBCUvjuuCrntPa57pw4TzLRAU/YE2DK (Sun-dried Tomatoes II, 1 step), fn_PXWJNziiEsfBUbX.EfiY/wtnaOVMThe (Microwave Tomato Sauce, 1 step), ar_N/wTTh7I1Xp/DI51lAmn4jlttzh2npC (Tilapia in Stewed Tomatoes, 1 step), ar_s.Y.9gQPj8/UboVuA9QPvWkqexshTE. (Homemade Stewed Tomatoes, 1 step), fn_Cv.LzyOIGtSJN3dvLIBqPQo8ac.K97G (Tomato Salsa, 1 step)",
+      "verdict": "gave no recipe IDs (declined / can't access the data) - no usable answer"
+    },
+    {
+      "id": "B4",
+      "question": "From the Recipe Box dataset, suggest five recipes that use eggs, onions, tomatoes and rice, contain no peanuts and have at most six instruction steps. Give the exact recipe titles as they appear in the dataset and the number of steps for each.",
+      "one_shot": "I’m sorry, but I don’t have direct access to the Recipe Box dataset, so I can’t look up the exact recipe titles or the precise number of instruction steps for each entry.  \n\nIf you can provide a list of candidate recipes (or a dump of the dataset) I’d be happy to filter them according to your criteria (eggs, onions, tomatoes, rice; no peanuts; ≤ 6 steps) and give you the exact titles and step counts.  \n\nOtherwise, I can suggest some typical recipes that meet those requirements, and you can then check whether they appear in the dataset. Let me know how you’d like to proceed!",
+      "grounded_answer": "ar_QyVarQzRar/zTLW7ExZpc6qbYC1xQF6 (Fiesta Egg Skillet, 5 steps, uses 4/4); fn_Akk/zqCo1n3wzwavH0..w6QIF5363M2 (Curried Rice With Smoked Trout, 3 steps, uses 4/4); ar_ylwbZEdf8zK8ZA6pqy15Wll6YtZyG2G (Omelet for Leftovers (Omurice), 2 steps, uses 4/4); fn_Z8iATJKOvt1aLJVdw1DFqPxUlKbxwe. (Turkey Meatball Vindaloo, 3 steps, uses 4/4); ar_q3kO3yCalJEVIp74kLkkcxHp6izs7zi (Imitation Meatloaf, 3 steps, uses 4/4)",
+      "verdict": "named no recipes"
+    },
+    {
+      "id": "B3",
+      "question": "Using the Recipe Box dataset, how many calories are in one slice of the Allrecipes 'Banana Bread' recipe and how long does it take to make?",
+      "one_shot": "**Allrecipes – “Banana Bread” (as it appears in the Recipe Box dataset)**  \n\n| Item | Value (from the dataset) |\n|------|--------------------------|\n| **Calories per slice** | **≈ 210 kcal** (the recipe is listed as 12 slices, total ≈ 2 520 kcal) |\n| **Total time to make** | **1 hour 15 minutes** (Prep ≈ 15 min + Cook ≈ 60 min) |\n\nSo, one serving (one slice) of the Allrecipes “Banana Bread” contains about **210 calories**, and the whole loaf takes roughly **75 minutes** from start to finish.",
+      "grounded_answer": "The dataset has no nutrition or time fields - RecipeBot says so and only quotes durations written in the steps.",
+      "verdict": "states a calorie number the dataset cannot support"
+    }
+  ]
+}

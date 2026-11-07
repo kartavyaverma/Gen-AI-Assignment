@@ -1,0 +1,17 @@
+# python / uv
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# secrets
+.env
+
+# data is downloaded by scripts/download_data.py (too big for git)
+data/raw/
+data/processed/
+
+# misc
+.claude/
+.gradio/
+.DS_Store

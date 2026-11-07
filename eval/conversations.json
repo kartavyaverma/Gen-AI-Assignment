@@ -1,0 +1,104 @@
+[
+  {
+    "id": "C1_search_followups",
+    "task": "Task 1 - search + multi-turn refinement",
+    "why": "PDF example: a newly stated restriction must refine the active search, with evidence from ingredient lists.",
+    "turns": [
+      {"user": "Find a penne pasta recipe",
+       "expect": {"intent": "search", "results_nonempty": true, "results_mention_all": ["penne"]}},
+      {"user": "I cannot have dairy",
+       "expect": {"intent": "search", "state_exclude_has": ["dairy"], "results_nonempty": true,
+                  "results_avoid_categories": ["dairy"], "results_mention_all": ["penne"]}},
+      {"user": "Show me the ingredients and instructions for the second one",
+       "expect": {"intent": "show_recipe", "output_contains": ["**Ingredients**", "**Instructions**"],
+                  "focus_is_result": 2}},
+      {"user": "How many calories does that have?",
+       "expect": {"intent": "unsupported", "output_contains_any": ["doesn't contain", "does not contain"],
+                  "output_not_regex": "\\b\\d{2,4}\\s*(k?cal|calories)\\b"}}
+    ]
+  },
+  {
+    "id": "C2_aggregate_stats",
+    "task": "Task 1 - aggregate statistics",
+    "why": "Counts / percentages / rankings must be computed over the full filtered set and state filters, n and method.",
+    "turns": [
+      {"user": "How many recipes contain both garlic and onion? What percentage of the dataset is that?",
+       "expect": {"intent": "stats", "matches_direct_stats": {"metric": "count", "include": ["garlic", "onion"]},
+                  "output_contains": ["Recipes analysed", "Calculation"]}},
+      {"user": "Among recipes containing tomato, which five have the fewest instruction steps?",
+       "expect": {"intent": "stats", "matches_direct_stats": {"metric": "rank_by_steps", "include": ["tomato"], "n": 5, "order": "asc"},
+                  "output_contains": ["a step = one non-empty line"]}},
+      {"user": "What's the average and median number of ingredients per recipe? Break it down by source.",
+       "expect": {"intent": "stats", "matches_direct_stats": {"metric": "ingredient_count_stats", "group_by_source": true},
+                  "output_contains": ["Allrecipes", "Epicurious", "Food Network", "Median"]}}
+    ]
+  },
+  {
+    "id": "C3_pantry_matching",
+    "task": "Task 2 - ingredient matching with hard constraints + follow-up",
+    "why": "PDF example request, then 'Exclude eggs too' must update the results without dropping earlier constraints.",
+    "turns": [
+      {"user": "I have eggs, onions, tomatoes, and rice. Suggest five recipes using as many of these as possible, with no peanuts and at most six instruction steps. Prefer recipes that need the fewest additional ingredients.",
+       "expect": {"intent": "match", "state_exclude_has": ["peanut"], "results_nonempty": true,
+                  "results_max_steps": 6, "results_avoid_categories": ["peanut"],
+                  "output_contains": ["Uses:", "Missing", "Why here"]}},
+      {"user": "Exclude eggs too",
+       "expect": {"intent": "match", "state_exclude_has": ["peanut", "egg"], "results_nonempty": true,
+                  "results_max_steps": 6, "results_avoid_categories": ["peanut", "egg"]}},
+      {"user": "Actually rank them by fewest steps instead",
+       "expect": {"intent": "match", "results_nonempty": true, "results_avoid_categories": ["peanut", "egg"],
+                  "output_contains": ["fewest steps →"]}}
+    ]
+  },
+  {
+    "id": "C4_no_match",
+    "task": "Task 1 + Task 2 - no-match cases",
+    "why": "Hard constraints must never be relaxed silently; alternatives must be clearly marked as violating.",
+    "turns": [
+      {"user": "I have lobster, mango and dark chocolate. I need a dairy-free recipe that uses all three, with at most 4 steps.",
+       "expect": {"intent": "match", "output_contains": ["No match found", "BREAK your constraints"],
+                  "state_exclude_has": ["dairy"]}},
+      {"user": "Forget that. Find me a beef stew.",
+       "expect": {"intent": "search", "results_nonempty": true}},
+      {"user": "I'm vegan.",
+       "expect": {"intent": "search", "state_exclude_has": ["vegan"],
+                  "output_contains_any": ["No recipes match", "No recipe matches"]}}
+    ]
+  },
+  {
+    "id": "C5_substitution_eggs",
+    "task": "Task 3 - substitution with limited evidence",
+    "why": "PDF example: remove eggs from banana bread using only dataset ingredients; cite supporting recipe IDs.",
+    "turns": [
+      {"user": "Find a banana bread recipe",
+       "expect": {"intent": "search", "results_nonempty": true, "results_mention_all": ["banana"]}},
+      {"user": "Take this banana bread recipe and remove the eggs. Use only ingredients that appear in the dataset. What replacements have evidence from related baked recipes, and how might the texture change?",
+       "expect": {"intent": "substitute", "output_contains": ["Dataset evidence", "Updated ingredients", "Revised instructions", "prediction"],
+                  "output_regex": "`(ar|epi|fn)_[^`]+`", "rewrite_avoids_categories": ["egg"]}}
+    ]
+  },
+  {
+    "id": "C6_substitution_dairy_weak",
+    "task": "Task 3 - substitution with weak / conflicting evidence and a hard restriction",
+    "why": "PDF example: replace cream in a pasta without dairy. The chosen recipe also contains other dairy, which must be flagged, not hidden.",
+    "turns": [
+      {"user": "Show me a creamy penne pasta recipe that uses heavy cream",
+       "expect": {"intent": "search", "results_nonempty": true}},
+      {"user": "Replace the cream in this pasta recipe without dairy. Prefer examples from recipes already in the database.",
+       "expect": {"intent": "substitute", "state_or_request_restricts": "dairy",
+                  "output_contains": ["Dataset evidence"], "output_not_contains": ["~~coconut milk~~"],
+                  "chosen_substitute_not_category": "dairy"}}
+    ]
+  },
+  {
+    "id": "C7_unsupported_and_reset",
+    "task": "Cross-cutting - refusing unsupported questions",
+    "why": "The dataset has no nutrition or time data; the bot must say so instead of guessing.",
+    "turns": [
+      {"user": "What is the healthiest, lowest-calorie lasagna in the dataset?",
+       "expect": {"intent_any": ["unsupported", "search"], "output_not_regex": "\\b\\d{2,4}\\s*(k?cal|calories)\\b"}},
+      {"user": "Start over",
+       "expect": {"intent": "reset"}}
+    ]
+  }
+]
