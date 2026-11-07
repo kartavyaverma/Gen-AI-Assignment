@@ -15,7 +15,9 @@ _Why this test:_ Hard constraints must never be relaxed silently; alternatives m
     "add_exclude": [
       "dairy"
     ],
-    "max_steps": 4
+    "remove_exclude": [],
+    "max_steps": 4,
+    "clear_max_steps": false
   },
   "match": {
     "have": [
@@ -23,8 +25,12 @@ _Why this test:_ Hard constraints must never be relaxed silently; alternatives m
       "mango",
       "dark chocolate"
     ],
-    "must_use_all": true,
+    "add_have": [],
+    "remove_have": [],
     "prefer": "max_used",
+    "max_missing": null,
+    "must_use_all": true,
+    "n": 5,
     "new_request": true
   }
 }

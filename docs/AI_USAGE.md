@@ -12,7 +12,7 @@
 ## How I used Claude Code
 
 - **Planning:** went through the assignment PDF and agreed the architecture before any code was
-  written: LLM only for parsing and rewriting, all facts and numbers computed in code, Gradio for
+  written: LLM only for parsing and rewriting, all facts and numbers computed in code, Streamlit for
   the UI, uv for packaging.
 - **Code:** generated module by module (data loading → normalisation → search → analytics →
   matching → substitution → agent → UI). Each module was run against the real dataset before

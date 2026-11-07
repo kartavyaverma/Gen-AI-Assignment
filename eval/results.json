@@ -12,21 +12,21 @@
       "desc": "step counting removes duplicated/boilerplate lines",
       "pass": true,
       "detail": "7,129 Epicurious recipes had duplicated method lines; e.g. epi_05zEpbSqcs9E0rcnCJWyZ9OgdH0MLby: 2 raw lines -> 1 steps",
-      "secs": 0.13
+      "secs": 0.12
     },
     {
       "id": "A3",
       "desc": "garlic AND onion count == independent numpy recomputation",
       "pass": true,
       "detail": "bot=15,974 manual=15,974 (12.99% of 122,931); broad rule=20,244",
-      "secs": 1.88
+      "secs": 1.83
     },
     {
       "id": "A4",
       "desc": "fewest-steps ranking is sorted and starts at the true minimum",
       "pass": true,
       "detail": "steps=[1, 1, 1, 1, 1], true minimum over 13,781 tomato recipes=1",
-      "secs": 0.15
+      "secs": 0.19
     },
     {
       "id": "A5",
@@ -40,35 +40,35 @@
       "desc": "pantry match respects no-peanuts / <=6 steps and ranks by ingredients used",
       "pass": true,
       "detail": "top-5 used counts [4, 4, 4, 4, 4], steps [5, 3, 2, 3, 3]",
-      "secs": 1.0
+      "secs": 1.11
     },
     {
       "id": "A7",
       "desc": "'exclude eggs too' removes eggs from pantry AND results",
       "pass": true,
       "detail": "pantry now ['onion', 'tomato', 'rice']; no egg in any result",
-      "secs": 0.23
+      "secs": 0.34
     },
     {
       "id": "A8",
       "desc": "no-match case is reported, never silently relaxed",
       "pass": true,
       "detail": "no-match reported; alternatives shown separately and labelled as violations",
-      "secs": 0.4
+      "secs": 0.43
     },
     {
       "id": "A9",
       "desc": "egg substitution cites real egg-free recipes; co-occurrence isn't treated as evidence",
       "pass": true,
       "detail": "best=yogurt (evidence: limited); cited 2 egg-free recipes, all verified egg-free; banana correctly marked 'co-occurs only'",
-      "secs": 7.23
+      "secs": 7.21
     },
     {
       "id": "A10",
       "desc": "dairy-free cream swap never picks dairy and flags leftover dairy lines",
       "pass": true,
       "detail": "recipe fn_7XHa/jzELyj6nhcXaRChTkp032PQMp2; best=broth thickened with cornstarch; still-violating lines flagged: ['Grated Parmesan and basil leaves, for garnish']; rejected=none",
-      "secs": 7.34
+      "secs": 7.33
     },
     {
       "id": "A11",
@@ -266,7 +266,7 @@
     {
       "id": "B1",
       "question": "How many recipes in the Recipe Box dataset (Allrecipes, Epicurious and Food Network recipes) contain both garlic and onion? What percentage of the dataset is that?",
-      "one_shot": "I’m afraid I don’t have the exact counts for the **Recipe Box** collection on hand, because the dataset isn’t built into the model and I can’t query it directly.  \nHowever, you can obtain the precise numbers yourself in just a few minutes with a little bit of Python (or any other data‑analysis tool). Below is a step‑by‑step guide, plus a rough sense of what you might expect based on similar food‑corpus analyses.\n\n---\n\n## 1. What you’ll need\n\n| Item | Why it’s needed |\n|------|-----------------|\n| **The Recipe Box CSV/JSON files** (or a single combined file) | Contains the recipe metadata and ingredient lists. |\n| **Python 3.x** with `pandas` (and optionally `tqdm` for progress bars) | Makes filtering and counting trivial. |\n| **A text‑search‑friendly representation of ingredients** (usually a single string per recipe) | Allows us to look for the words “garlic” and “onion”. |\n\nIf the dataset is split into three files (Allrecipes, Epicurious, Food Network), just concatenate them first.\n\n---\n\n## 2. Minimal reproducible script\n\n```python\nimport pandas as pd\nfrom pathlib import Path\n\n# -------------------------------------------------\n# 1️⃣  Load the data\n# -------------------------------------------------\n# Adjust the path / filenames to match your local layout.\n# The dataset is often provided as a CSV with a column called \"ingredients\"\n# that contains a list‑like string (e.g. \"['garlic', 'onion', 'tomato']\").\ndata_files = [\n    Path(\"allrecipes.csv\"),\n    Path(\"epicurious.csv\"),\n    Path(\"food_network.csv\")\n]\n\n# Read each file and concatenate\ndf_list = [pd.read_csv(f) for f in data_files]\ndf = pd.concat(df_list, ignore_index=True)\n\n# -------------------------------------------------\n# 2️⃣  Normalise the ingredient column\n# -------------------------------------------------\n# The column name may differ – common names are \"ingredients\", \"ingredient_list\", etc.\nING_COL = \"ingredients\"          # <-- change if needed\nif ING_COL not in df.columns:\n    raise KeyError(f\"Column '{ING_COL}' not found. Available columns: {df.columns.tolist()}\")\n\n# Turn everything to lower‑case and strip punctuation for reliable matching\ndef clean_ingredients(text):\n    if pd.isna(text):\n        return \"\"\n    # If the column already holds a Python list (as a string), eval it safely:\n    #   e.g. \"['garlic', 'onion']\"\n    # If it’s a plain string like \"garlic, onion, tomato\", we just split on commas.\n    # The function below works for both cases.\n    import ast, re\n    try:\n        items = ast.literal_eval(text)\n        if isinstance(items, (list, tuple)):\n            tokens = [str(i) for i in items]\n        else:\n            tokens = [str(items)]\n   ",
+      "one_shot": "I’m sorry—I don’t have the Recipe Box collection (the combined Allrecipes + Epicurious + Food Network dump) loaded in memory, so I can’t give you an exact count or percentage off‑the‑cuff.  \n\nWhat I can do is walk you through a quick, reproducible way to obtain those numbers yourself (or to let anyone else who has the data do the same). The steps are the same whether you’re working with a CSV export, a JSON‑lines file, or a SQLite dump of the dataset.\n\n---\n\n## 1. Load the data\n\nBelow is a minimal example that works for the three most common formats. Adjust the file paths and column names to match your specific dump.\n\n```python\nimport pandas as pd\nimport json\nimport sqlite3\nimport re\n\n# ------------------------------------------------------------------\n# 1A. CSV (or TSV) version ------------------------------------------------\n# ------------------------------------------------------------------\n# df = pd.read_csv('recipe_box.csv')               # comma‑separated\n# df = pd.read_csv('recipe_box.tsv', sep='\\t')     # tab‑separated\n\n# ------------------------------------------------------------------\n# 1B. JSON‑Lines version ------------------------------------------------\n# ------------------------------------------------------------------\n# records = []\n# with open('recipe_box.jsonl', 'r', encoding='utf-8') as f:\n#     for line in f:\n#         records.append(json.loads(line))\n# df = pd.DataFrame(records)\n\n# ------------------------------------------------------------------\n# 1C. SQLite version ----------------------------------------------------\n# ------------------------------------------------------------------\n# conn = sqlite3.connect('recipe_box.sqlite')\n# df = pd.read_sql_query('SELECT * FROM recipes', conn)\n\n# ------------------------------------------------------------------\n# Pick the block that matches your file format and uncomment it.\n# ------------------------------------------------------------------\n```\n\n> **Tip:** Most public releases of the Recipe Box dataset store the ingredient list as a single string column (often called `ingredients`, `ingredient_list`, or `ingredients_text`). If the ingredients are already tokenised into a list of strings, you can skip the tokenisation step below.\n\n---\n\n## 2. Normalise the ingredient text\n\nWe want a case‑insensitive, punctuation‑free search for the words **“garlic”** and **“onion”**. The simplest (and usually sufficient) approach is to lower‑case everything and strip punctuation.\n\n```python\ndef clean_ingredients(text):\n    \"\"\"\n    Turn a raw ingredient string into a clean, lower‑cased string.\n    \"\"\"\n    # Replace common delimiters with a space\n    text = re.sub(r'[\\n\\r,;]', ' ', str(text))\n    # Remove punctuation (keep hyphens inside words, e.g. \"green-onion\")\n    text = re.sub(r'[^\\w\\s-]', '', text)\n    # Collapse multiple spaces\n    text = re.sub(r'\\s+', ' ', text).strip()\n    return text.lower()\n\n# Apply the cleaning function\ndf['ingredients_clean'] = df['ingredients'].apply(clean_ingredients)\n```\n\nIf your dataset already provides a list of ingredient strings (e.g., `['1 cup diced onion",
       "grounded_answer": "15,974 recipes = 12.99% of 122,931 (strict); 20,244 with the loose any-mention rule",
       "verdict": "declined to answer (it can't see the data) and only offered code or a guess - honest, but the user gets no answer; RecipeBot computes it"
     },

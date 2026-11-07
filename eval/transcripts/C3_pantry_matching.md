@@ -153,18 +153,10 @@ _Matching is by ingredient name only — you didn't give quantities, so I haven'
 ```json
 {
   "intent": "match",
-  "constraints": {
-    "add_exclude": [],
-    "remove_exclude": [],
-    "max_steps": null,
-    "clear_max_steps": false
-  },
   "match": {
     "have": null,
     "add_have": [],
-    "remove_have": [
-      "eggs"
-    ],
+    "remove_have": [],
     "prefer": "fewest_steps",
     "max_missing": null,
     "must_use_all": false,
@@ -180,6 +172,7 @@ _Matching is by ingredient name only — you didn't give quantities, so I haven'
 🥕 **Your ingredients (normalised):** onion, tomato, rice
 **Hard constraints:** excludes **peanuts** (checked every ingredient line against 4 peanut terms); excludes **egg** (checked every ingredient line against 9 egg terms); at most 6 instruction steps
 **Ranking:** fewest steps → most of your ingredients used → fewest extra ingredients (salt, pepper and water are assumed staples and not counted as missing)
+_Note: 'eggs' conflicts with your exclusion (egg), so I removed it from your available ingredients._
 
 26,732 recipes satisfy every constraint and use at least one of your ingredients. Top 5:
 

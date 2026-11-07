@@ -54,11 +54,13 @@ uv run python scripts/download_data.py
 uv run recipebot-build
 ```
 
-**4. Run it.** Web UI (Gradio) at http://127.0.0.1:7860:
+**4. Run it.** Web UI (Streamlit). It opens http://localhost:8501 in your browser:
 
 ```bash
 uv run recipebot-ui
 ```
+
+(This is a shortcut for `uv run streamlit run src/recipebot/app.py`. Stop it with `Ctrl + C`.)
 
 …or in the terminal:
 
@@ -84,9 +86,10 @@ Find a banana bread recipe
 Take this banana bread recipe and remove the eggs. Use only ingredients that appear in the dataset.
 ```
 
-The right-hand panel of the UI shows the **active state** (restrictions, pantry, recipe in focus).
-It also shows the **router's JSON plan** for your last message, so you can see exactly how the bot
-understood you.
+The sidebar shows the **active state** (restrictions, pantry, recipe in focus) and has one-click
+buttons for all of these examples, plus a **New conversation** button. Every answer has a
+collapsible **"How I understood this"** panel with the router's JSON plan, so you can see exactly
+how the bot read your message.
 
 ---
 
@@ -118,7 +121,7 @@ Results go to [`eval/results.md`](eval/results.md), and conversation transcripts
 | `src/recipebot/substitution.py` | Evidence-based substitutions with cited recipe IDs (Task 3) |
 | `src/recipebot/llm.py` | Groq calls: the router prompt, the recipe rewriter, the one-shot baseline |
 | `src/recipebot/agent.py` | Session state and follow-ups; connects the router to the tools |
-| `src/recipebot/app.py` / `cli.py` | Gradio UI / terminal UI |
+| `src/recipebot/app.py` / `ui.py` / `cli.py` | Streamlit chat UI / its launcher / terminal UI |
 | `eval/` | Conversation test set, evaluation runner, results, transcripts |
 | `tests/` | Unit tests |
 | `docs/DESIGN.md` | Design notes: retrieval, normalisation, ranking, computation, uncertainty, external search |

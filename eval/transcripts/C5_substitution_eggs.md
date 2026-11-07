@@ -11,6 +11,12 @@ _Why this test:_ PDF example: remove eggs from banana bread using only dataset i
 ```json
 {
   "intent": "search",
+  "constraints": {
+    "add_exclude": [],
+    "remove_exclude": [],
+    "max_steps": null,
+    "clear_max_steps": false
+  },
   "search": {
     "query": "banana bread",
     "add_include": [],
@@ -58,7 +64,7 @@ Say *show 2* for the full recipe, *more* for more results, or add a restriction.
 
 **Bot:**
 
-🔁 ### Adapting: Banana Bread (`ar_BoBTO3QUO3Ci.0kayPs8.CfDU5oEXuu`)
+### Adapting: Banana Bread (`ar_BoBTO3QUO3Ci.0kayPs8.CfDU5oEXuu`)
 **Removing:** egg — affected lines: '2 eggs, beaten'
 **Role of egg in this dish** _(general cooking knowledge, not from the dataset)_: binding (holds the crumb together), some lift/structure, and moisture
 
@@ -103,7 +109,7 @@ Supporting recipes (similar dishes that do this):
 **What will probably change** _(prediction - not tested, and not stated in the dataset)_
 - The bread will be extra moist and have a slight tang from the yogurt.
 - Without eggs, the crumb may be a bit denser and rise slightly less, giving a softer texture.
-- ⚠️ Yogurt does not provide the same structure as eggs, so the loaf may be less fluffy and may need a touch more baking soda or a pinch of extra leavening if a very light texture is desired.
+- ⚠️ Yogurt does not provide the same structure as eggs, so the loaf may be a bit more crumbly and rise less than the original.
 
 _Safety note: I checked the new ingredient list against my keyword lists for your restrictions and found nothing, but that is not a medical guarantee. Always check packaged ingredient labels for allergens._
 

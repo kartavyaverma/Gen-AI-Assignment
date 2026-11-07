@@ -16,6 +16,7 @@ _Why this test:_ PDF example: replace cream in a pasta without dairy. The chosen
     "add_include": [
       "heavy cream"
     ],
+    "remove_include": [],
     "new_search": true
   }
 }
@@ -71,7 +72,7 @@ Say *show 2* for the full recipe, *more* for more results, or add a restriction.
 
 **Bot:**
 
-🔁 ### Adapting: Penne Pasta with Sausage and Cheesy Garlic Bread (`fn_lh9vsC29xv9U6.ywWsPcsJL/I31Bnha`)
+### Adapting: Penne Pasta with Sausage and Cheesy Garlic Bread (`fn_lh9vsC29xv9U6.ywWsPcsJL/I31Bnha`)
 **Removing:** heavy cream — affected lines: '1/4 cup heavy cream'
 **Your restrictions:** dairy
 **Role of heavy cream in this dish** _(general cooking knowledge, not from the dataset)_: richness (fat), body, and a smooth sauce that coats the food
@@ -114,7 +115,7 @@ Supporting recipes (similar dishes that do this):
 - 4 Italian-style hot pork sausages, cut into 1/2-inch slices
 - 1 (28-ounce) can diced tomatoes, drained
 - Kosher salt and freshly ground black pepper
-- 1/4 cup olive oil (to be emulsified with starchy pasta water)
+- 2 tablespoons olive oil mixed with 2 tablespoons reserved pasta water (emulsified)
 - Basil leaves, for garnish
 - 1/2 store-bought garlic bread (save other half for Pizza)
 - 1 cup shredded dairy-free mozzarella-style cheese
@@ -122,20 +123,18 @@ Supporting recipes (similar dishes that do this):
 
 **Revised instructions**
 1. Bring large pot of salted water to a boil over high heat. Cook pasta according to package directions.
-2. In a large deep skillet over medium-high heat, add olive oil. Add onion, garlic, Italian seasoning mix and red pepper flakes, if using. Stir frequently and cook until the onions are soft and fragrant, about 3 to 4 minutes. Add sausage and cook for 1 minute. Add can of diced tomatoes, stirring all the ingredients together to combine. Season with kosher salt and freshly ground black pepper, to taste and let simmer for 10 minutes. Reserve 1/2 cup pasta water before draining the pasta. Stir in 1/4 cup olive oil and a few tablespoons of the reserved pasta water to create a creamy emulsion, and mix well.
+2. In a large deep skillet over medium-high heat, add olive oil. Add onion, garlic, Italian seasoning mix and red pepper flakes, if using. Stir frequently and cook until the onions are soft and fragrant, about 3 to 4 minutes. Add sausage and cook for 1 minute. Add can of crushed tomatoes, stirring all the ingredients together to combine. Season with kosher salt and freshly ground black pepper, to taste and let simmer for 10 minutes. Stir in the olive oil and pasta water mixture (2 Tbsp olive oil + 2 Tbsp reserved pasta water) and mix well to create a creamy sauce.
 3. Drain the pasta and add directly to the skillet with the sauce Toss the pasta to coat with the sauce. Transfer to a serving bowl or platter and garnish with basil leaves. Serve with the cheesy garlic bread.
 4. For the cheesy garlic bread:
 5. Preheat oven to 400 degrees F.
-6. Sprinkle dairy-free shredded mozzarella-style cheese and Italian seasoning over garlic bread half. Place on tinfoil lined baking sheet and cook in the oven for 10 to 12 minutes, until the cheese is melted and bread is warmed through. Slice and serve.
+6. Sprinkle dairy-free cheese and Italian seasoning over garlic bread half. Place on tinfoil lined baking sheet and cook in the oven for 10 to 12 minutes, until the cheese is melted and bread is warmed through. Slice and serve.
 7. Use the leftover garlic bread from this recipe to make Garlic Bread Pizza.
 
 **What will probably change** _(prediction - not tested, and not stated in the dataset)_
-- The sauce will be lighter and less rich than with heavy cream, offering a subtle olive oil flavor and a slightly thinner, but still velvety, texture thanks to the starch from the pasta water.
-- The dairy‑free cheese will melt, though it may be less stretchy and have a milder flavor than traditional mozzarella, giving the garlic bread a slightly different mouthfeel.
-- Overall the dish remains savory and comforting, with a hint of olive richness replacing the dairy creaminess.
-- ⚠️ Olive oil and pasta water may not fully replicate the thickness of heavy cream; the sauce could be a bit thinner or oilier if too much oil is used.
-- ⚠️ Dairy‑free mozzarella may not melt as uniformly, resulting in less gooey cheese on the garlic bread.
-- ⚠️ Be sure to reserve pasta water before draining, otherwise you won’t have the starchy liquid needed for emulsifying the sauce.
+- The olive oil‑pasta‑water emulsion will give the sauce a lighter, less buttery mouthfeel than heavy cream, but still provide a silky coating for the pasta.
+- Dairy‑free mozzarella will melt, though it may be less stretchy and slightly less rich in flavor than traditional mozzarella.
+- ⚠️ The dairy‑free cheese may not melt as uniformly as regular mozzarella, potentially resulting in a slightly grainier texture on the garlic bread.
+- ⚠️ The olive oil and pasta‑water mixture may produce a thinner sauce than heavy cream; you may need to let it reduce a bit longer to achieve desired thickness.
 
 _Safety note: I checked the new ingredient list against my keyword lists for your restrictions and found nothing, but that is not a medical guarantee. Always check packaged ingredient labels for allergens._
 

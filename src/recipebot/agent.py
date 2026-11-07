@@ -366,7 +366,7 @@ class RecipeBot:
                        dataset_only=bool(p.get("dataset_only"))),
             rewriter=self.rewriter,
         )
-        return note + "🔁 " + md
+        return note + md  # md starts with a "### Adapting" heading
 
     # ------------------------------------------------------------------ #
     def _unsupported(self, plan: dict) -> str:
