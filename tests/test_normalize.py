@@ -1,5 +1,3 @@
-"""Fast unit tests that don't need the dataset:  uv run pytest"""
-
 from recipebot.data import split_steps
 from recipebot.normalize import (
     canonical_names,
@@ -42,7 +40,6 @@ def test_allergen_exceptions():
     assert "egg" not in line_categories(clean_line("1 large eggplant"))
     assert "dairy" in line_categories(clean_line("1/2 cup heavy cream"))
     assert "tree_nut" not in line_categories(clean_line("1/4 tsp ground nutmeg"))
-    # explicitly labelled free-from products are trusted, but only that product
     assert "dairy" not in line_categories(clean_line("1 cup shredded dairy-free mozzarella-style cheese"))
     assert "dairy" in line_categories(clean_line("1 cup vegan yogurt and 1 cup milk"))
 
@@ -64,7 +61,7 @@ def test_quantities():
     assert parse_quantity("3 eggs") == (3.0, None)
     assert compare_quantity((3.0, None), (2.0, None)) == "enough"
     assert compare_quantity((1.0, "cup"), (20.0, "tbsp")) == "not enough"
-    assert compare_quantity((2.0, "cup"), (1.0, "lb")) is None  # volume vs mass: not comparable
+    assert compare_quantity((2.0, "cup"), (1.0, "lb")) is None
 
 
 def test_step_rule_dedupes_and_drops_boilerplate():

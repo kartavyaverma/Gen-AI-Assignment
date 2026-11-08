@@ -1,5 +1,3 @@
-"""`uv run recipebot-ui` - starts the Streamlit app (src/recipebot/app.py) on http://localhost:8501."""
-
 import sys
 from pathlib import Path
 

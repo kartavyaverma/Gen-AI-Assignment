@@ -1,8 +1,3 @@
-"""Terminal version of the chatbot:  uv run recipebot-cli
-
-Type 'quit' to exit, 'reset' to start over, 'debug' to toggle printing the router's JSON plan.
-"""
-
 from __future__ import annotations
 
 import sys

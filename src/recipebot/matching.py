@@ -1,23 +1,3 @@
-"""Pantry -> recipe matching (Task 2).
-
-Given "I have eggs, onions, tomatoes and rice; no peanuts; max 6 steps", find
-EXISTING recipes and rank them in a way you can explain in one sentence:
-
-    1. how many of *your* ingredients the recipe uses       (more is better)
-    2. how many extra ingredients you'd still need to buy    (fewer is better)
-    3. number of instruction steps                           (fewer is better)
-    4. recipe ID                                             (just to make ties reproducible)
-
-The user can flip the priority ("fewest missing first" / "fewest steps first").
-We use a lexicographic sort instead of a weighted score on purpose: a weighted
-score always needs magic weights, and "why is #3 below #2?" then has no crisp
-answer. Here it always does.
-
-Hard constraints (exclusions, max steps) are applied BEFORE ranking and are
-never relaxed silently. If nothing survives we say so, and any "closest"
-suggestions are shown separately with the exact rule they break.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -114,7 +94,6 @@ def _quantity_notes(store: RecipeStore, row, item: PantryItem) -> list[str]:
 
 def _rank(store: RecipeStore, mask: np.ndarray, pantry: list[PantryItem], prefer: str,
           max_missing: int | None, must_use_all: bool = False) -> list[Match]:
-    # recipes using at least one pantry item
     uses_any = np.zeros(len(store), dtype=bool)
     for it in pantry:
         uses_any |= store.mask_for(it.family) if store.names_for(it.family) else False
@@ -160,7 +139,6 @@ def match_recipes(store: RecipeStore, req: MatchRequest) -> tuple[str, dict]:
     prefer = req.prefer if req.prefer in SORT_MODES else "max_used"
     notes: list[str] = []
 
-    # an exclusion beats an available ingredient: "exclude eggs too" removes eggs from the pantry
     ex_cats, ex_terms = [], []
     for w in req.exclude:
         c, t = resolve_restriction(w)
@@ -217,10 +195,10 @@ def match_recipes(store: RecipeStore, req: MatchRequest) -> tuple[str, dict]:
         for it in m.used:
             qnotes += _quantity_notes(store, row, it)
         out.append(f"**{rank}. {row['title']}** — `{row['id']}`")
-        out.append(f"- ✅ Uses: {', '.join(it.family for it in m.used)}")
-        out.append(f"- 🛒 Missing (you'd need): {', '.join(m.missing) if m.missing else 'nothing beyond staples'}")
+        out.append(f"- Uses: {', '.join(it.family for it in m.used)}")
+        out.append(f"- Missing: {', '.join(m.missing) if m.missing else 'nothing beyond staples'}")
         if m.unused:
-            out.append(f"- ➖ Not used from your list: {', '.join(it.family for it in m.unused)}")
+            out.append(f"- Not used: {', '.join(it.family for it in m.unused)}")
         out.append(f"- Steps: {m.n_steps} · Why here: {_why(prev, m, prefer, len(pantry))}")
         for q in qnotes:
             out.append(f"- Quantity: {q}")
@@ -236,7 +214,6 @@ def match_recipes(store: RecipeStore, req: MatchRequest) -> tuple[str, dict]:
 
 
 def _closest_violations(store: RecipeStore, pantry, req: MatchRequest, prefer: str, info) -> list[str]:
-    """Best recipes if we ignored the hard constraints - clearly labelled as violating them."""
     relaxed = _rank(store, np.ones(len(store), dtype=bool), pantry, prefer, None)[:3]
     if not relaxed:
         return ["\nThere are no recipes using these ingredients at all, even without constraints."]

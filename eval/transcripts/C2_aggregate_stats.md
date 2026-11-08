@@ -24,7 +24,7 @@ _Why this test:_ Counts / percentages / rankings must be computed over the full 
 
 **Bot:**
 
-📊 **15,974 recipes** match — that is **12.99%** of the 122,931 recipes in the dataset.
+**15,974 recipes** match — that is **12.99%** of the 122,931 recipes in the dataset.
 
 For comparison, a looser rule — *any ingredient line that mentions the word*, which also counts things like garlic powder, onion soup mix or green onions — gives 20,244 recipes (16.47%). I report the stricter number as the answer because a recipe using only garlic powder doesn't really 'contain garlic'.
 
@@ -61,7 +61,7 @@ For comparison, a looser rule — *any ingredient line that mentions the word*, 
 
 **Bot:**
 
-📊 The 5 matching recipes with the **fewest steps**:
+The 5 matching recipes with the **fewest steps**:
 
 | # | Recipe | ID | Steps | Ingredients |
 |---|---|---|---:|---:|
@@ -94,8 +94,7 @@ Note: 2,059 matching recipes have exactly 1 step, so the order among ties is dec
   "intent": "stats",
   "stats": {
     "metric": "ingredient_count_stats",
-    "group_by_source": true,
-    "use_active_filters": false
+    "group_by_source": true
   }
 }
 ```
@@ -103,7 +102,7 @@ Note: 2,059 matching recipes have exactly 1 step, so the order among ties is dec
 
 **Bot:**
 
-📊 Number of ingredients per recipe across 122,931 recipes:
+Number of ingredients per recipe across 122,931 recipes:
 
 | Mean | Median | Min | Max | Std dev |
 |---:|---:|---:|---:|---:|

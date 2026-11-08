@@ -1,18 +1,6 @@
-"""The chatbot: session state + routing + calling the right tool.
-
-Flow for every message:
-
-    user text ──► LLM router (JSON plan) ──► update session state
-                                         └─► deterministic tool (search / stats / match / substitute)
-                                               └─► markdown answer built from real records
-
-Session state is what makes follow-ups work. Restrictions ("no dairy", "max 6
-steps") live in `state.exclude` / `state.max_steps` and keep applying to every
-later search, match and substitution until the user changes them.
-"""
-
 from __future__ import annotations
 
+import difflib
 import json
 import re
 from dataclasses import dataclass, field
@@ -33,11 +21,11 @@ PAGE = 5
 class SessionState:
     query: str = ""
     include: list[str] = field(default_factory=list)
-    exclude: list[str] = field(default_factory=list)      # active hard restrictions
+    exclude: list[str] = field(default_factory=list)
     max_steps: int | None = None
     last_results: list[str] = field(default_factory=list)
     offset: int = 0
-    focus: str | None = None                              # recipe currently being discussed
+    focus: str | None = None
     pantry: list[str] | None = None
     prefer: str = "max_used"
     max_missing: int | None = None
@@ -81,16 +69,16 @@ class RecipeBot:
         self.rewriter = rewriter if rewriter is not None else llm.rewrite_recipe
         self.state = SessionState()
 
-    # ------------------------------------------------------------------ #
     def handle(self, message: str) -> Reply:
         message = (message or "").strip()
         if not message:
             return Reply("Ask me about recipes - e.g. *find a penne pasta recipe*.", {})
         try:
+            self._message = message
             plan = self.router(message, self.state.summary(self.store))
         except llm.LLMUnavailable as exc:
             return Reply(f"⚠️ {exc}", {"error": str(exc)})
-        except Exception as exc:  # network, rate limit, bad JSON
+        except Exception as exc:
             return Reply(f"⚠️ I couldn't reach the language model ({type(exc).__name__}: {exc}). "
                          f"Please try again in a moment.", {"error": str(exc)})
 
@@ -109,7 +97,6 @@ class RecipeBot:
         self.state.turns.append((message, md.split("\n", 1)[0][:160]))
         return Reply(md, {"plan": plan, "intent": intent, "state": self._state_dict()})
 
-    # ------------------------------------------------------------------ #
     def _apply_constraints(self, c: dict) -> None:
         s = self.state
         for x in c.get("remove_exclude") or []:
@@ -145,16 +132,13 @@ class RecipeBot:
             parts.append(f"≤ {s.max_steps} steps")
         return "; ".join(parts) if parts else "none"
 
-    # ------------------------------------------------------------------ #
-    # Task 1: search
-    # ------------------------------------------------------------------ #
     def _search(self, plan: dict) -> str:
         p = plan.get("search") or {}
         s = self.state
         if p.get("new_search"):
             s.query, s.include = "", []
         if p.get("query"):
-            s.query = str(p["query"])
+            s.query = self._fix_typos(str(p["query"]))
         for x in p.get("remove_include") or []:
             s.include = [i for i in s.include if i.lower() != str(x).lower()]
         for x in p.get("add_include") or []:
@@ -164,6 +148,17 @@ class RecipeBot:
             return "What would you like to search for? A dish name, an ingredient, or a description works."
         s.offset = 0
         return self._run_search()
+
+    def _fix_typos(self, query: str) -> str:
+        said = re.findall(r"[a-z]+", getattr(self, "_message", "").lower())
+        fixed = []
+        for w in query.split():
+            if w.lower() not in said:
+                close = difflib.get_close_matches(w.lower(), said, n=1, cutoff=0.8)
+                if close:
+                    w = close[0]
+            fixed.append(w)
+        return " ".join(fixed)
 
     def _more(self, plan: dict) -> str:
         if not (self.state.query or self.state.include):
@@ -175,7 +170,7 @@ class RecipeBot:
         s, st = self.state, self.store
         res = search(st, s.query, self._filters(), k=s.offset + PAGE)
         hits = res.hits[s.offset:]
-        out = [f"🔎 **Search:** {s.query or '(by ingredients)'} · **Active constraints:** {self.constraints_line()}"]
+        out = [f"**Search:** {s.query or '(by ingredients)'} · **Filters:** {self.constraints_line()}"]
         if not hits:
             if s.offset and res.hits:
                 return out[0] + "\n\nThat's all the matching results."
@@ -193,15 +188,16 @@ class RecipeBot:
         for i, h in enumerate(hits, s.offset + 1):
             r = st.row(h.pos)
             partial = f" · ⚠️ partial match ({h.coverage:.0%} of query words)" if h.coverage < 1.0 else ""
+            out.append("")
             out.append(f"**{i}. {r['title']}** — `{r['id']}` · {SOURCE_NAMES[r['source']]} · "
                        f"{_n(r['n_steps'], 'step')} · {_n(r['n_ingredients'], 'ingredient')}{partial}")
             ev = evidence_lines(st, r, info.include_families)
             for fam, lines in ev.items():
                 if lines:
-                    out.append(f"   - contains {fam}: _{lines[0]}_")
+                    out.append(f"- contains {fam}: _{lines[0]}_")
             if info.exclude_categories or info.exclude_terms:
                 checked = ", ".join([CATEGORY_LABELS.get(c, c) for c in info.exclude_categories] + info.exclude_terms)
-                out.append(f"   - ✅ no {checked} found in its {len(r['ingredients'])} ingredient lines: "
+                out.append(f"- no {checked} found in its {len(r['ingredients'])} ingredient lines: "
                            f"_{'; '.join(r['ingredients'])}_")
         s.last_results = [st.ids[h.pos] for h in res.hits]
         s.focus = s.last_results[0]
@@ -209,7 +205,6 @@ class RecipeBot:
         return "\n".join(out)
 
     def _explain_no_match(self, res) -> str:
-        """Say which constraint is responsible instead of silently relaxing it."""
         st, s = self.store, self.state
         lines = ["**No recipes match all of your constraints.** I did not relax any of them."]
         base = Filters(include=list(s.include))
@@ -229,9 +224,7 @@ class RecipeBot:
         lines.append("Tell me if you'd like to change a constraint.")
         return "\n".join(lines)
 
-    # ------------------------------------------------------------------ #
     def _resolve(self, ref) -> tuple[str | None, str]:
-        """Turn 'focus' / '2' / an ID / title words into a recipe ID (+ a note on how)."""
         s, st = self.state, self.store
         ref = str(ref or "").strip()
         if not ref or ref.lower() in ("focus", "this", "that", "it", "this recipe", "that recipe"):
@@ -249,7 +242,6 @@ class RecipeBot:
         r = st.get(ref.strip("`"))
         if r is not None:
             return r["id"], ""
-        # title words: prefer one of the results already on screen
         for rid in s.last_results:
             if ref.lower() in st.get(rid)["title"].lower():
                 return rid, ""
@@ -274,7 +266,6 @@ class RecipeBot:
         out += [f"- {x}" for x in r["ingredients"]]
         out.append("\n**Instructions** (as in the dataset)")
         out += [f"{i}. {x}" for i, x in enumerate(r["steps"], 1)]
-        # warn if this recipe breaks an active restriction
         warn = []
         for ex in self.state.exclude:
             cats, term = resolve_restriction(ex)
@@ -287,9 +278,6 @@ class RecipeBot:
         out.append("\n_The dataset has no nutrition, servings or total cooking time for recipes._")
         return "\n".join(out)
 
-    # ------------------------------------------------------------------ #
-    # Task 1: stats
-    # ------------------------------------------------------------------ #
     def _stats(self, plan: dict) -> str:
         p = plan.get("stats") or {}
         f = Filters(
@@ -312,11 +300,8 @@ class RecipeBot:
         ans = run_stats(self.store, spec)
         if spec.metric in ("rank_by_steps", "rank_by_ingredients") and ans.data.get("ranking"):
             self.state.last_results = [x["id"] for x in ans.data["ranking"]]
-        return "📊 " + ans.markdown
+        return ans.markdown
 
-    # ------------------------------------------------------------------ #
-    # Task 2: match
-    # ------------------------------------------------------------------ #
     def _match(self, plan: dict) -> str:
         p = plan.get("match") or {}
         s = self.state
@@ -345,11 +330,8 @@ class RecipeBot:
         ids = [r["id"] for r in data.get("results", [])]
         if ids:
             s.last_results, s.focus = ids, ids[0]
-        return "🥕 " + md
+        return md
 
-    # ------------------------------------------------------------------ #
-    # Task 3: substitute
-    # ------------------------------------------------------------------ #
     def _substitute(self, plan: dict) -> str:
         p = plan.get("substitute") or {}
         rid, note = self._resolve(p.get("recipe_ref") or "focus")
@@ -366,9 +348,8 @@ class RecipeBot:
                        dataset_only=bool(p.get("dataset_only"))),
             rewriter=self.rewriter,
         )
-        return note + md  # md starts with a "### Adapting" heading
+        return note + md
 
-    # ------------------------------------------------------------------ #
     def _unsupported(self, plan: dict) -> str:
         missing = (plan.get("unsupported") or {}).get("missing") or "that information"
         out = [f"The Recipe Box dataset doesn't contain **{missing}** — each recipe only has a title, "
@@ -396,10 +377,10 @@ class RecipeBot:
 
 HELP_TEXT = """I can help with the ~123k recipes in the Recipe Box dataset:
 
-- **Search** — *find a penne pasta recipe*, then refine: *I can't have dairy*, *show 2*
-- **Statistics** — *how many recipes contain garlic and onion?*, *which 5 tomato recipes have the fewest steps?*
-- **Use what you have** — *I have eggs, onions, tomatoes and rice; no peanuts; max 6 steps*, then *exclude eggs too*
-- **Substitutions** — *remove the eggs from this banana bread*, *replace the cream without dairy*
+- **Search** - *find a penne pasta recipe*, then refine: *I can't have dairy*, *show 2*
+- **Statistics** - *how many recipes contain garlic and onion?*, *which 5 tomato recipes have the fewest steps?*
+- **Use what you have** - *I have eggs, onions, tomatoes and rice; no peanuts; max 6 steps*, then *exclude eggs too*
+- **Substitutions** - *remove the eggs from this banana bread*, *replace the cream without dairy*
 
 Everything I say about recipes comes from the dataset, with recipe IDs. The dataset has no nutrition or cooking-time data, so I won't invent those."""
 

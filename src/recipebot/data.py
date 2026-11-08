@@ -1,18 +1,3 @@
-"""Load the three Recipe Box JSON files into one tidy DataFrame.
-
-Decisions (also written up in docs/DESIGN.md):
-
-* Stable ID  = "<source>_<original key>", e.g. "ar_rmK12Uau.ntP510KeImX506H6Mr6jTu".
-  The original key is the hash the dataset author already uses, so the ID never
-  changes between runs or machines. The prefix tells you which site it came from.
-* We keep only records that have a title, at least one ingredient and some
-  instructions (122,938 of 125,164). The rest are empty shells (nulls, or a title
-  with nothing else), and keeping them would quietly skew every statistic.
-* The original title, ingredient list and instruction text are kept untouched
-  (`ingredients_raw`, `instructions`). For display we only strip the
-  "ADVERTISEMENT" token that the Allrecipes scraper glued onto every line.
-"""
-
 from __future__ import annotations
 
 import json
@@ -32,16 +17,6 @@ _BOILERPLATE = re.compile(
 
 
 def split_steps(instructions: str) -> list[str]:
-    """Step-counting rule used everywhere in the project.
-
-    One step = one non-empty line of the original instruction text, after
-    * dropping boilerplate lines ("Watch how to make this recipe.") and
-    * dropping exact duplicate lines (≈7k Epicurious recipes repeat their whole
-      method twice - a scraping artefact, not real extra steps).
-
-    We use the source's own line breaks rather than splitting sentences because
-    that is how the original authors grouped the work into steps.
-    """
     steps, seen = [], set()
     for raw in (instructions or "").split("\n"):
         line = raw.strip()
@@ -53,7 +28,6 @@ def split_steps(instructions: str) -> list[str]:
 
 
 def display_ingredients(raw: list[str]) -> list[str]:
-    """Original lines minus the scraper's 'ADVERTISEMENT' artefacts and blanks."""
     out = []
     for line in raw or []:
         text = re.sub(r"\s+", " ", (line or "").replace("ADVERTISEMENT", " ")).strip()
@@ -87,7 +61,7 @@ def _process_record(source: str, key: str, rec: dict) -> dict | None:
             if n not in names:
                 names.append(n)
 
-    if not counted_lines:  # only section headers - not a usable recipe
+    if not counted_lines:
         return None
 
     families = []
@@ -127,7 +101,6 @@ def load_raw() -> dict[str, dict]:
 
 
 def build_dataframe(verbose: bool = True) -> tuple[pd.DataFrame, dict]:
-    """Return (recipes DataFrame, load report)."""
     raw = load_raw()
     rows, report = [], {"raw_records": 0, "kept": 0, "dropped_incomplete": 0, "per_source": {}}
     for src, recs in raw.items():

@@ -1,38 +1,26 @@
-"""Streamlit web UI.
-
-Start it with:   uv run recipebot-ui      (opens http://localhost:8501)
-or directly:     uv run streamlit run src/recipebot/app.py
-
-Each browser session gets its own RecipeBot (its own conversation state);
-the big recipe store is loaded once per server and shared.
-"""
-
 from __future__ import annotations
 
 import streamlit as st
 
 from recipebot.agent import RecipeBot
-from recipebot.data import SOURCE_NAMES
 from recipebot.store import load_store
 
-st.set_page_config(page_title="RecipeBot", page_icon="🍳", layout="wide")
+st.set_page_config(page_title="RecipeBot")
 
 EXAMPLES = [
-    ("🔎 Search", "Find a penne pasta recipe"),
-    ("🚫 Refine", "I cannot have dairy"),
-    ("📖 Open a result", "Show me the second one"),
-    ("📊 Count", "How many recipes contain both garlic and onion? What percentage of the dataset is that?"),
-    ("📊 Rank", "Among recipes containing tomato, which five have the fewest instruction steps?"),
-    ("🥕 Pantry", "I have eggs, onions, tomatoes and rice. Suggest five recipes using as many as possible, "
-                 "no peanuts, at most six steps, fewest extra ingredients."),
-    ("🥕 Follow-up", "Exclude eggs too"),
-    ("🔁 Substitute", "Find a banana bread recipe"),
-    ("🔁 Remove eggs", "Take this banana bread recipe and remove the eggs. Use only ingredients that appear in the dataset."),
-    ("❓ Unsupported", "How many calories does it have?"),
+    "Find a penne pasta recipe",
+    "I cannot have dairy",
+    "Show me the second one",
+    "How many recipes contain both garlic and onion?",
+    "Among recipes containing tomato, which five have the fewest steps?",
+    "I have eggs, onions, tomatoes and rice. No peanuts, at most 6 steps.",
+    "Exclude eggs too",
+    "Find a banana bread recipe",
+    "Remove the eggs from this recipe",
 ]
 
 
-@st.cache_resource(show_spinner="Loading 123k recipes (first start builds the index, ~2 min)…")
+@st.cache_resource(show_spinner="Loading recipes...")
 def get_store():
     return load_store()
 
@@ -45,13 +33,6 @@ def get_bot() -> RecipeBot:
 
 
 def safe_md(text: str) -> str:
-    """Make the bot's markdown render the way it's written.
-
-    * Streamlit renders $...$ as LaTeX - recipe text should stay literal.
-    * Markdown joins single line breaks into one paragraph; the answers use one
-      line per result/fact, so turn those into hard breaks (except table rows,
-      which must stay untouched).
-    """
     text = text.replace("$", "\\$")
     out = []
     for line in text.split("\n"):
@@ -64,7 +45,7 @@ def safe_md(text: str) -> str:
 def ask(prompt: str) -> None:
     bot = get_bot()
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.spinner("Thinking…"):
+    with st.spinner("Searching..."):
         reply = bot.handle(prompt)
     st.session_state.messages.append(
         {"role": "assistant", "content": reply.markdown, "plan": reply.trace.get("plan")}
@@ -74,54 +55,34 @@ def ask(prompt: str) -> None:
 def render_sidebar(bot: RecipeBot) -> None:
     s = bot.state
     with st.sidebar:
-        st.markdown("### 🍳 RecipeBot")
-        st.caption(f"{len(bot.store):,} recipes from {', '.join(SOURCE_NAMES.values())}")
+        st.header("RecipeBot")
+        st.write(f"{len(bot.store):,} recipes loaded")
 
-        if st.button("🔄 New conversation", width="stretch"):
+        if st.button("New chat"):
             st.session_state.pop("bot", None)
             st.session_state.messages = []
             st.rerun()
 
-        st.markdown("#### Active state")
-        rows = {
-            "Search": s.query or "–",
-            "Must include": ", ".join(s.include) or "–",
-            "Restrictions": ", ".join(s.exclude) or "–",
-            "Max steps": s.max_steps if s.max_steps is not None else "–",
-            "Pantry": ", ".join(s.pantry) if s.pantry else "–",
-        }
-        for k, v in rows.items():
-            st.markdown(f"**{k}:** {v}")
+        st.subheader("Current filters")
+        active = []
+        if s.query:
+            active.append(f"Search: {s.query}")
+        if s.include:
+            active.append("Must include: " + ", ".join(s.include))
+        if s.exclude:
+            active.append("Excluding: " + ", ".join(s.exclude))
+        if s.max_steps is not None:
+            active.append(f"Max steps: {s.max_steps}")
+        if s.pantry:
+            active.append("Ingredients you have: " + ", ".join(s.pantry))
         if s.focus:
             r = bot.store.get(s.focus)
-            st.markdown(f"**In focus:** {r['title'] if r is not None else ''}  \n`{s.focus}`")
-        st.caption("Restrictions stay on for later searches, matches and substitutions until you change them.")
+            if r is not None:
+                active.append(f"Current recipe: {r['title']}")
+        st.text("\n".join(active) if active else "None")
 
-        st.markdown("#### Try these (in order)")
-        for label, prompt in EXAMPLES:
-            if st.button(label, help=prompt, key=f"ex_{label}", width="stretch"):
-                st.session_state.pending = prompt
-                st.rerun()
-
-        st.divider()
-        st.caption("Every recipe fact comes from the dataset (with IDs) and every number is computed in code, "
-                   "not by the LLM. The dataset has no nutrition or cooking-time data.")
-
-
-def render_welcome() -> None:
-    st.markdown(
-        """
-#### What I can do
-| | Example |
-|---|---|
-| **Search** recipes by dish, ingredient or description | *Find a penne pasta recipe* → *I cannot have dairy* |
-| **Statistics** over the whole dataset | *How many recipes contain garlic and onion?* |
-| **Match** what's in your kitchen | *I have eggs, onions, tomatoes and rice…* → *Exclude eggs too* |
-| **Adapt** a recipe with evidence | *Remove the eggs from this banana bread* |
-
-Pick an example from the sidebar or type below.
-"""
-    )
+        with st.expander("Example questions"):
+            st.markdown("\n".join(f"- {e}" for e in EXAMPLES))
 
 
 def main() -> None:
@@ -129,22 +90,18 @@ def main() -> None:
     render_sidebar(bot)
 
     st.title("RecipeBot")
-    st.caption("Search, analyse, match and adapt recipes — grounded in the Recipe Box dataset.")
-
-    if not st.session_state.messages:
-        render_welcome()
+    st.write("Ask questions about recipes in the Recipe Box dataset.")
 
     for msg in st.session_state.messages:
-        with st.chat_message(msg["role"], avatar="🧑" if msg["role"] == "user" else "🍳"):
+        with st.chat_message(msg["role"]):
             st.markdown(safe_md(msg["content"]))
             if msg.get("plan"):
-                with st.expander("🔍 How I understood this (router JSON)"):
+                with st.expander("Parsed request"):
                     st.json(msg["plan"])
 
-    prompt = st.chat_input("Ask about recipes…")
-    pending = st.session_state.pop("pending", None)
-    if prompt or pending:
-        ask(prompt or pending)
+    prompt = st.chat_input("Type your question")
+    if prompt:
+        ask(prompt)
         st.rerun()
 
 

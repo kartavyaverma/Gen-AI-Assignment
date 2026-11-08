@@ -1,9 +1,3 @@
-"""The RecipeStore: the processed table plus the indexes we search with.
-
-Built once by `recipebot-build` (≈1.5 min) and cached to data/processed/.
-At chat time it loads in a few seconds.
-"""
-
 from __future__ import annotations
 
 import pickle
@@ -30,7 +24,6 @@ class RecipeStore:
         self.ing_text = df["ing_text"].to_numpy()
         self._names_cache: dict[str, list[str]] = {}
 
-        # inverted indexes: family -> row positions, category -> boolean mask
         fam_idx, name_idx = defaultdict(list), defaultdict(list)
         for i, (fams, names) in enumerate(zip(df["families"], df["names"])):
             for f in fams:
@@ -47,7 +40,6 @@ class RecipeStore:
             for c in all_cats
         }
 
-    # convenient accessors ------------------------------------------------- #
     def __len__(self) -> int:
         return len(self.df)
 
@@ -57,7 +49,6 @@ class RecipeStore:
     def get(self, recipe_id: str) -> pd.Series | None:
         i = self.pos.get(recipe_id)
         if i is None:
-            # be forgiving: allow a unique prefix of an id
             matches = [rid for rid in self.ids if rid.startswith(recipe_id)] if len(recipe_id) >= 6 else []
             if len(matches) == 1:
                 i = self.pos[matches[0]]
@@ -67,13 +58,6 @@ class RecipeStore:
         return len(self.family_index.get(family, ()))
 
     def names_for(self, family: str) -> list[str]:
-        """Every normalised name we treat as `family`, most common first.
-
-        A name counts if its family is `family` (explicit variety merges like
-        egg yolk -> egg) or if the name ends with the word and is not on the
-        DIFFERENT_PRODUCTS list (bittersweet chocolate -> chocolate, but
-        sweet potato is NOT potato).
-        """
         cached = self._names_cache.get(family)
         if cached is not None:
             return cached

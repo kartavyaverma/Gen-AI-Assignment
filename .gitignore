@@ -13,6 +13,8 @@ data/processed/
 
 # misc
 .claude/
-.gradio/
 .streamlit/secrets.toml
 .DS_Store
+
+# personal notes, not part of the submission
+docs/CODE_FLOW.md

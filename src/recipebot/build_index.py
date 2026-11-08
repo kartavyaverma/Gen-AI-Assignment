@@ -1,5 +1,3 @@
-"""`uv run recipebot-build` - process the raw JSON and build the search indexes."""
-
 from .store import build_and_save
 
 

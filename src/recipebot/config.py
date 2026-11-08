@@ -1,5 +1,3 @@
-"""Paths and settings in one place so nothing is hard-coded elsewhere."""
-
 import os
 from pathlib import Path
 
@@ -12,7 +10,6 @@ DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 
-# The three files shipped in recipes_raw.zip (Allrecipes, Epicurious, Food Network)
 SOURCES = {
     "ar": "recipes_raw_nosource_ar.json",
     "epi": "recipes_raw_nosource_epi.json",

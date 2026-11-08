@@ -1,31 +1,8 @@
-"""Ingredient-line normalisation.
-
-Everything that turns a messy line like
-    "2 (10.75 ounce) cans condensed cream of chicken soup ADVERTISEMENT"
-into something we can count and compare lives here.
-
-Three levels of "name" come out of this module:
-
-* clean line   - the line with scraper junk removed, lower-cased (used for safety checks)
-* canonical    - "chicken breast", "olive oil", "garlic powder"   (what we show)
-* family       - "chicken", "onion", "egg"                        (what we match on)
-
-The family level is where we deliberately merge things that are the same
-ingredient in a different variety (red onion -> onion, egg yolk -> egg), while
-keeping different *products* apart (garlic powder is NOT garlic, peanut butter is
-NOT butter, coconut milk is NOT milk).  All of these rules are hand written and
-listed below on purpose: they are easy to read, easy to argue with in a review,
-and easy to change.
-"""
-
 from __future__ import annotations
 
 import re
 from functools import lru_cache
 
-# --------------------------------------------------------------------------- #
-# Low level text cleanup
-# --------------------------------------------------------------------------- #
 
 _UNICODE_FRACTIONS = {
     "½": " 1/2", "¼": " 1/4", "¾": " 3/4", "⅓": " 1/3", "⅔": " 2/3",
@@ -47,7 +24,6 @@ UNITS = {
     "inch", "inches", "cube", "cubes", "sheet", "sheets", "strip", "strips", "wedge", "wedges",
 }
 
-# Words that describe size/prep/state but not *what* the ingredient is.
 DESCRIPTORS = {
     "fresh", "freshly", "chopped", "finely", "coarsely", "roughly", "minced", "diced",
     "sliced", "thinly", "thickly", "cubed", "grated", "shredded", "peeled", "seeded",
@@ -70,7 +46,6 @@ DESCRIPTORS = {
     "nonstick", "non-stick",
 }
 
-# "ground" is a prep word for spices but part of the product name for meat.
 _GROUND_KEEP = {"beef", "pork", "turkey", "chicken", "lamb", "veal", "meat", "sausage", "ginger", "bison"}
 
 _IRREGULAR_PLURALS = {
@@ -88,7 +63,6 @@ _NO_SINGULAR = {
 
 
 def singularize(word: str) -> str:
-    """Tiny rule-based singulariser - good enough for ingredient nouns."""
     if word in _IRREGULAR_PLURALS:
         return _IRREGULAR_PLURALS[word]
     if len(word) <= 3 or word in _NO_SINGULAR:
@@ -107,12 +81,9 @@ def singularize(word: str) -> str:
 
 
 def singular_phrase(phrase: str) -> str:
-    """Singularise only the head (last) word: 'green onions' -> 'green onion'."""
     words = phrase.split()
     if not words:
         return phrase
-    # irregular plurals like "noodles"/"beans" stay plural for nicer names,
-    # but we still want "black beans" == "black bean" for matching.
     last = words[-1]
     if last in {"beans", "peas", "noodles", "sprouts", "capers", "chips", "oats"}:
         words[-1] = last[:-1]
@@ -127,7 +98,6 @@ _SPACES = re.compile(r"\s+")
 
 
 def clean_line(line: str) -> str:
-    """Remove scraper junk and normalise whitespace/fractions; keep all words."""
     if not line:
         return ""
     text = line.replace("ADVERTISEMENT", " ")
@@ -138,16 +108,14 @@ def clean_line(line: str) -> str:
 
 
 def is_header(line: str) -> bool:
-    """Lines like 'For the sauce:' or 'TOPPING' are section headers, not ingredients."""
     stripped = line.strip()
     return stripped.endswith(":") or (stripped.isupper() and len(stripped.split()) <= 4)
 
 
 def _strip_quantity_and_unit(text: str) -> str:
-    """'1 1/2 cups (about 6 oz) chopped onion' -> 'chopped onion'."""
     text = _PAREN_RE.sub(" ", text)
     text = _SPACES.sub(" ", text).strip()
-    for _ in range(4):  # a few passes handles '1 (10 ounce) package frozen ...'
+    for _ in range(4):
         before = text
         while True:
             m = _QTY_RE.match(text)
@@ -165,11 +133,6 @@ def _strip_quantity_and_unit(text: str) -> str:
     return text
 
 
-# --------------------------------------------------------------------------- #
-# Canonical names and families
-# --------------------------------------------------------------------------- #
-
-# phrase (after descriptor removal + singular) -> canonical name
 SYNONYMS = {
     "scallion": "green onion", "spring onion": "green onion",
     "all-purpose flour": "flour", "all purpose flour": "flour", "plain flour": "flour",
@@ -244,8 +207,6 @@ SYNONYMS = {
     "grated lemon peel": "lemon zest", "zest of lemon": "lemon zest",
 }
 
-# canonical -> family.  Only things we're confident are "the same ingredient,
-# different variety" go here.  Different *products* stay separate on purpose.
 FAMILIES = {
     "red onion": "onion", "onion": "onion", "shallot": "shallot",
     "cherry tomato": "tomato", "grape tomato": "tomato", "roma tomato": "tomato",
@@ -291,7 +252,6 @@ def _drop_descriptors(segment: str) -> str:
         if w in DESCRIPTORS or re.fullmatch(r"[\d/.\-]+", w):
             continue
         out.append(w)
-    # connector words are fine in the middle ("cream of chicken soup") but not at the edges
     while out and out[0] in {"and", "of", "&"}:
         out.pop(0)
     while out and out[-1] in {"and", "of", "&"}:
@@ -301,14 +261,10 @@ def _drop_descriptors(segment: str) -> str:
 
 @lru_cache(maxsize=300_000)
 def canonical_names(line: str) -> tuple[str, ...]:
-    """Return the canonical ingredient name(s) for one raw ingredient line.
-
-    Usually one name, sometimes two ('salt and pepper'), or none (headers/junk).
-    """
     text = clean_line(line)
     if not text or is_header(line.replace("ADVERTISEMENT", "")):
         return ()
-    if ":" in text:  # "Garnish: ground nutmeg" -> "ground nutmeg"
+    if ":" in text:
         text = text.split(":", 1)[1].strip()
     text = _strip_quantity_and_unit(text)
     text = re.sub(r"\b(to taste|for garnish|for serving|as needed|or more|or to taste|if desired)\b", " ", text)
@@ -317,7 +273,6 @@ def canonical_names(line: str) -> tuple[str, ...]:
     if re.match(r"^(kosher |sea )?salt (and|&) (freshly |fresh )?(ground |cracked )?(black )?pepper", low):
         return ("salt", "black pepper")
 
-    # alternatives: "butter or margarine" -> "butter" (first option is the recipe's default)
     low = re.split(r"\bor\b|/", low)[0]
 
     segments = [s.strip() for s in low.split(",")]
@@ -338,10 +293,8 @@ def canonical_names(line: str) -> tuple[str, ...]:
 
 
 def family_of(name: str) -> str:
-    """Map a canonical name to its family (variety-level merge)."""
     if name in FAMILIES:
         return FAMILIES[name]
-    # generic "<colour/variety> onion" style merges we trust
     m = re.fullmatch(r"(?:red|yellow|white|sweet|vidalia|spanish|maui|walla walla) onion", name)
     if m:
         return "onion"
@@ -351,8 +304,6 @@ def family_of(name: str) -> str:
     return name
 
 
-# Names that END with a common ingredient word but are a different product.
-# e.g. "sweet potato" must not count as "potato", "peanut butter" is not "butter".
 DIFFERENT_PRODUCTS = {
     "green onion", "spring onion", "french-fried onion", "fried onion", "french fried onion",
     "sweet potato", "peanut butter", "apple butter", "almond butter", "cocoa butter",
@@ -369,20 +320,11 @@ DIFFERENT_PRODUCTS = {
 
 
 def normalize_user_ingredient(text: str) -> str:
-    """Normalise an ingredient typed by a user ('3 Eggs', 'tomatoes') to a family."""
     names = canonical_names(text)
     if not names:
         names = (singular_phrase(clean_line(text)),)
     return family_of(names[0])
 
-
-# --------------------------------------------------------------------------- #
-# Dietary / allergen categories
-# --------------------------------------------------------------------------- #
-# We check these against the *whole cleaned line* (not just the canonical name)
-# so that "pasta tossed with butter" still trips the dairy check. For safety
-# filters a false alarm (dropping a recipe that was actually fine) is much
-# cheaper than a miss, so the term lists are deliberately broad.
 
 CATEGORY_TERMS: dict[str, list[str]] = {
     "dairy": [
@@ -443,7 +385,6 @@ CATEGORY_TERMS: dict[str, list[str]] = {
     "soy": ["soy", "soya", "tofu", "edamame", "miso", "tempeh", "tamari", "soybean", "soybeans"],
 }
 
-# phrases that contain a trigger word but are NOT that category
 CATEGORY_EXCEPTIONS: dict[str, list[str]] = {
     "dairy": [
         "coconut milk", "coconut cream", "almond milk", "soy milk", "soymilk", "oat milk",
@@ -477,7 +418,6 @@ CATEGORY_EXCEPTIONS: dict[str, list[str]] = {
     "soy": [],
 }
 
-# Friendly words people use -> the categories they mean
 DIET_ALIASES: dict[str, list[str]] = {
     "dairy": ["dairy"], "dairy-free": ["dairy"], "lactose": ["dairy"], "milk": ["dairy"],
     "egg": ["egg"], "eggs": ["egg"], "egg-free": ["egg"],
@@ -506,9 +446,6 @@ _EXC_RE = {c: (_compile(t) if t else None) for c, t in CATEGORY_EXCEPTIONS.items
 ALL_CATEGORIES = list(CATEGORY_TERMS)
 
 
-# Products explicitly labelled as free of an allergen ("dairy-free mozzarella-style cheese",
-# "vegan butter", "egg-free mayonnaise"). We trust an explicit label, but only the label + the
-# product right after it, so "dairy-free yogurt and 1 cup milk" still flags the milk.
 _FREE_LABEL_RX = {
     "dairy": re.compile(r"\b(?:dairy[- ]free|non[- ]?dairy|vegan|plant[- ]based)\s+(?:[\w-]+\s+){0,2}"
                         r"(?:cheese|butter|milk|cream|yogurt|yoghurt|sour cream|cream cheese|parmesan|mozzarella)\b"),
@@ -517,7 +454,6 @@ _FREE_LABEL_RX = {
 
 
 def line_categories(clean: str) -> set[str]:
-    """Which dietary categories does one cleaned ingredient line trigger?"""
     hits = set()
     for cat, rx in _CAT_RE.items():
         text = clean
@@ -532,10 +468,6 @@ def line_categories(clean: str) -> set[str]:
 
 
 def term_regex(term: str) -> re.Pattern:
-    """Word-boundary regex for a free-text term, tolerant of plurals.
-
-    'peanuts' -> matches 'peanut', 'peanuts', 'peanut butter', 'peanut oil'.
-    """
     t = clean_line(term)
     base = singular_phrase(t)
     alts = {re.escape(t), re.escape(base)}
@@ -543,10 +475,6 @@ def term_regex(term: str) -> re.Pattern:
 
 
 def resolve_restriction(word: str) -> tuple[list[str], str | None]:
-    """Turn a user restriction into (categories, free_term).
-
-    'dairy' -> (['dairy'], None);  'vegan' -> ([...], None);  'cilantro' -> ([], 'cilantro')
-    """
     w = clean_line(word).replace("no ", "").replace("-free", "").replace(" free", "").strip()
     if w in DIET_ALIASES:
         return DIET_ALIASES[w], None
@@ -554,10 +482,6 @@ def resolve_restriction(word: str) -> tuple[list[str], str | None]:
         return DIET_ALIASES[w + "-free"], None
     return [], w
 
-
-# --------------------------------------------------------------------------- #
-# Quantities (used for Task 2 sufficiency checks)
-# --------------------------------------------------------------------------- #
 
 _UNIT_CANON = {
     "cup": "cup", "cups": "cup", "c": "cup",
@@ -567,7 +491,6 @@ _UNIT_CANON = {
     "lbs": "lb", "gram": "g", "grams": "g", "g": "g", "kilogram": "kg", "kilograms": "kg",
     "kg": "kg", "ml": "ml", "liter": "l", "liters": "l", "litre": "l", "litres": "l", "l": "l",
 }
-# conversion to a base unit within each dimension
 _TO_BASE = {
     "tsp": ("volume", 1.0), "tbsp": ("volume", 3.0), "cup": ("volume", 48.0),
     "ml": ("volume", 0.2029), "l": ("volume", 202.9),
@@ -593,7 +516,6 @@ _AMOUNT_RE = re.compile(r"^\s*(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)\s*([a-z]+)?"
 
 
 def parse_quantity(line: str) -> tuple[float | None, str | None]:
-    """'1 1/2 cups rice' -> (1.5, 'cup');  '3 eggs' -> (3.0, None);  'salt' -> (None, None)."""
     text = _PAREN_RE.sub(" ", clean_line(line))
     m = _AMOUNT_RE.match(text)
     if not m:
@@ -604,7 +526,6 @@ def parse_quantity(line: str) -> tuple[float | None, str | None]:
 
 
 def compare_quantity(have: tuple, need: tuple) -> str | None:
-    """Return 'enough' / 'not enough' if the two quantities are comparable, else None."""
     (ha, hu), (na, nu) = have, need
     if ha is None or na is None:
         return None
@@ -613,5 +534,5 @@ def compare_quantity(have: tuple, need: tuple) -> str | None:
     hd, hf = _TO_BASE[hu]
     nd, nf = _TO_BASE[nu]
     if hd != nd:
-        return None  # e.g. "2 cups" vs "1 pound" - can't compare without densities
+        return None
     return "enough" if ha * hf >= na * nf - 1e-9 else "not enough"

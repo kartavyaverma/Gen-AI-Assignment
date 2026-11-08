@@ -1,9 +1,2 @@
-[theme]
-primaryColor = "#E8590C"
-font = "sans serif"
-
-[server]
-headless = false
-
 [browser]
 gatherUsageStats = false

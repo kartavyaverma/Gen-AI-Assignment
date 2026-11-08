@@ -1,13 +1,3 @@
-"""Statistics over the dataset (Task 1, analytical questions).
-
-Rule of the house: the LLM never produces a number. It only turns the question
-into a structured spec (metric + filters); everything below is plain pandas /
-numpy over the *complete* filtered set, and each answer says
-  - which filters were applied,
-  - how many recipes were analysed (and out of how many),
-  - exactly how the number was calculated.
-"""
-
 from __future__ import annotations
 
 from collections import Counter
@@ -26,12 +16,12 @@ INGREDIENT_RULE = ("ingredient count = number of distinct ingredient lines, igno
 STAPLES = {"salt", "black pepper", "water"}
 
 METRICS = [
-    "count",                 # how many recipes match (+ % of dataset)
-    "top_ingredients",       # most common ingredients among matches
+    "count",
+    "top_ingredients",
     "ingredient_count_stats",
     "step_count_stats",
-    "rank_by_steps",         # fewest/most steps
-    "rank_by_ingredients",   # fewest/most ingredients
+    "rank_by_steps",
+    "rank_by_ingredients",
 ]
 
 
@@ -40,9 +30,9 @@ class StatsSpec:
     metric: str
     filters: Filters = field(default_factory=Filters)
     n: int = 5
-    order: str = "asc"                 # for rankings: asc = fewest first
+    order: str = "asc"
     group_by_source: bool = False
-    exclude_staples: bool = False      # for top_ingredients
+    exclude_staples: bool = False
 
 
 @dataclass
@@ -84,12 +74,10 @@ def run_stats(store: RecipeStore, spec: StatsSpec) -> StatsAnswer:
         pct = 100 * n / total
         lines.append(f"**{n:,} recipes** match — that is **{pct:.2f}%** of the {total:,} recipes in the dataset.")
         data.update(count=n, percent=round(pct, 4), denominator=total)
-        # transparency: what a looser "any line mentions the word" match would give
         if info.include_families and not spec.filters.include_any:
             loose = np.ones(len(store), dtype=bool)
             for fam in info.include_families:
                 loose &= broad_mask(store, fam)
-            # keep the other (non-include) filters identical
             other = apply_filters(store, Filters(**{**spec.filters.__dict__, "include": []})).mask
             loose &= other
             ln = int(loose.sum())
@@ -117,7 +105,7 @@ def run_stats(store: RecipeStore, spec: StatsSpec) -> StatsAnswer:
         if spec.exclude_staples:
             for s in STAPLES:
                 counter.pop(s, None)
-        for fam in info.include_families:   # obviously every match contains these
+        for fam in info.include_families:
             counter.pop(fam, None)
         top = counter.most_common(spec.n)
         lines.append(f"Most common ingredients across the {n:,} matching recipes:\n")
@@ -153,14 +141,13 @@ def run_stats(store: RecipeStore, spec: StatsSpec) -> StatsAnswer:
         rule = INGREDIENT_RULE if spec.metric == "ingredient_count_stats" else STEP_RULE
         calc = f"- Calculation: numpy mean/median/min/max/std over all {n:,} values. Rule: {rule}."
 
-    else:  # rankings
+    else:
         if n == 0:
             return StatsAnswer(_no_match(store, info.description), data)
         key = store.n_steps if spec.metric == "rank_by_steps" else store.n_ingredients
         tiebreak = store.n_ingredients if spec.metric == "rank_by_steps" else store.n_steps
         cand = np.flatnonzero(mask)
         sign = 1 if spec.order == "asc" else -1
-        # sort by key, then by the other count, then by id -> fully reproducible
         order = sorted(cand, key=lambda p: (sign * key[p], sign * tiebreak[p], store.ids[p]))
         top = order[: spec.n]
         what = "steps" if spec.metric == "rank_by_steps" else "ingredients"

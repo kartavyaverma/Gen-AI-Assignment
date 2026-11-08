@@ -1,19 +1,3 @@
-"""Reproducible evaluation.
-
-    uv run python eval/run_eval.py            # everything (needs GROQ_API_KEY for parts B and C)
-    uv run python eval/run_eval.py --offline  # part A only (no API key needed)
-
-Part A - deterministic tool checks (no LLM). These pin down the properties that
-         matter: filters really exclude things, rankings are really sorted,
-         numbers equal an independent recomputation, no-match is reported.
-Part B - scripted multi-turn conversations through the full bot (LLM router +
-         tools). Each turn has assertions; transcripts go to eval/transcripts/.
-Part C - a plain one-shot LLM baseline on the same kind of questions, to show
-         where an ungrounded answer goes wrong.
-
-Results: eval/results.md and eval/results.json
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -30,20 +14,16 @@ sys.path.insert(0, str(ROOT / "src"))
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-from recipebot.analytics import StatsSpec, run_stats  # noqa: E402
-from recipebot.matching import MatchRequest, match_recipes  # noqa: E402
-from recipebot.normalize import canonical_names, clean_line, family_of, line_categories  # noqa: E402
-from recipebot.search import Filters, apply_filters, search  # noqa: E402
-from recipebot.store import load_store  # noqa: E402
-from recipebot.substitution import SubRequest, suggest_substitutes  # noqa: E402
+from recipebot.analytics import StatsSpec, run_stats
+from recipebot.matching import MatchRequest, match_recipes
+from recipebot.normalize import canonical_names, clean_line, family_of, line_categories
+from recipebot.search import Filters, apply_filters, search
+from recipebot.store import load_store
+from recipebot.substitution import SubRequest, suggest_substitutes
 
 EVAL_DIR = ROOT / "eval"
 TRANSCRIPTS = EVAL_DIR / "transcripts"
 
-
-# --------------------------------------------------------------------------- #
-# Part A
-# --------------------------------------------------------------------------- #
 
 def part_a(store) -> list[dict]:
     results = []
@@ -52,13 +32,12 @@ def part_a(store) -> list[dict]:
         t = time.time()
         try:
             ok, detail = fn()
-        except Exception as exc:  # a crash is a failure, not a stop
+        except Exception as exc:
             ok, detail = False, f"crashed: {exc!r}"
         results.append({"id": cid, "desc": desc, "pass": bool(ok), "detail": detail,
                         "secs": round(time.time() - t, 2)})
         print(f"  [{'PASS' if ok else 'FAIL'}] {cid}: {desc} - {detail}")
 
-    # --- normalisation ---
     def a1():
         cases = {
             "2 tablespoons peanut butter": ("peanut butter", {"peanut"}, "dairy"),
@@ -78,7 +57,6 @@ def part_a(store) -> list[dict]:
         return (not bad and fam_ok), ("all normalisation cases ok" if not bad else "; ".join(bad))
     check("A1", "ingredient normalisation & allergen exceptions", a1)
 
-    # --- step rule ---
     def a2():
         df = store.df
         epi = df[df["source"] == "epi"]
@@ -89,7 +67,6 @@ def part_a(store) -> list[dict]:
         return ok, f"{len(dup):,} Epicurious recipes had duplicated method lines; e.g. {sample['id']}: {len(lines)} raw lines -> {sample['n_steps']} steps"
     check("A2", "step counting removes duplicated/boilerplate lines", a2)
 
-    # --- stats: count equals an independent recomputation ---
     def a3():
         ans = run_stats(store, StatsSpec("count", Filters(include=["garlic", "onion"])))
         g, o = store.mask_for("garlic"), store.mask_for("onion")
@@ -99,7 +76,6 @@ def part_a(store) -> list[dict]:
         return ok, f"bot={ans.data['count']:,} manual={manual:,} ({pct:.2f}% of {len(store):,}); broad rule={ans.data['broad_count']:,}"
     check("A3", "garlic AND onion count == independent numpy recomputation", a3)
 
-    # --- stats: ranking is really the minimum ---
     def a4():
         ans = run_stats(store, StatsSpec("rank_by_steps", Filters(include=["tomato"]), n=5))
         mask = store.mask_for("tomato")
@@ -110,7 +86,6 @@ def part_a(store) -> list[dict]:
         return ok, f"steps={steps}, true minimum over {int(mask.sum()):,} tomato recipes={true_min}"
     check("A4", "fewest-steps ranking is sorted and starts at the true minimum", a4)
 
-    # --- search: dairy filter really holds over the whole result set ---
     def a5():
         res = search(store, "penne pasta", Filters(exclude=["dairy"]), k=20)
         info = apply_filters(store, Filters(exclude=["dairy"]))
@@ -119,7 +94,6 @@ def part_a(store) -> list[dict]:
         return leaked == 0 and hits_ok and res.n_eligible > 0, f"{res.n_eligible:,} eligible penne results, 0 dairy leaks"
     check("A5", "'no dairy' filter excludes every dairy-flagged recipe", a5)
 
-    # --- matching: PDF example ---
     def a6():
         md, d = match_recipes(store, MatchRequest(have=["eggs", "onions", "tomatoes", "rice"], exclude=["peanuts"], max_steps=6))
         rows = [store.get(r["id"]) for r in d["results"]]
@@ -142,7 +116,6 @@ def part_a(store) -> list[dict]:
         return ok, "no-match reported; alternatives shown separately and labelled as violations"
     check("A8", "no-match case is reported, never silently relaxed", a8)
 
-    # --- substitution ---
     bread = store.get("ar_BoBTO3QUO3Ci.0kayPs8.CfDU5oEXuu")
 
     def a9():
@@ -175,10 +148,6 @@ def part_a(store) -> list[dict]:
 
     return results
 
-
-# --------------------------------------------------------------------------- #
-# Part B
-# --------------------------------------------------------------------------- #
 
 def _turn_checks(bot, store, reply, exp: dict) -> list[str]:
     fails = []
@@ -270,7 +239,7 @@ def part_b(store) -> list[dict]:
         turn_results = []
         for i, turn in enumerate(conv["turns"], 1):
             reply = bot.handle(turn["user"])
-            if reply.trace.get("error"):          # e.g. rate limit: wait once and retry
+            if reply.trace.get("error"):
                 time.sleep(20)
                 reply = bot.handle(turn["user"])
             fails = _turn_checks(bot, store, reply, turn["expect"])
@@ -282,16 +251,12 @@ def part_b(store) -> list[dict]:
                       plan_to_json(reply.trace.get("plan", {})), "```", "</details>", "",
                       "**Bot:**", "", reply.markdown, "",
                       f"**Checks:** {'✅ all passed' if not fails else '❌ ' + '; '.join(fails)}", "", "---", ""]
-            time.sleep(1.0)  # stay friendly with the free-tier rate limit
+            time.sleep(1.0)
         (TRANSCRIPTS / f"{conv['id']}.md").write_text("\n".join(lines), encoding="utf-8")
         out.append({"id": conv["id"], "task": conv["task"], "turns": turn_results,
                     "pass": all(t["pass"] for t in turn_results)})
     return out
 
-
-# --------------------------------------------------------------------------- #
-# Part C
-# --------------------------------------------------------------------------- #
 
 def part_c(store) -> list[dict]:
     from recipebot.llm import one_shot_answer
@@ -309,6 +274,8 @@ def part_c(store) -> list[dict]:
     close = any(abs(n - count["count"]) / count["count"] < 0.05 for n in nums)
     if close:
         v1 = "a number within 5% of the computed count"
+    elif not nums:
+        v1 = "gave no number - only code for the user to run themselves, so no usable answer"
     elif refusal.search(a1[:600]):
         v1 = ("declined to answer (it can't see the data) and only offered code or a guess - honest, "
               "but the user gets no answer; RecipeBot computes it")
@@ -357,8 +324,6 @@ def part_c(store) -> list[dict]:
                 "verdict": "states a calorie number the dataset cannot support" if gives_number else "did not invent calories"})
     return res
 
-
-# --------------------------------------------------------------------------- #
 
 def write_report(a, b, c) -> None:
     lines = ["# Evaluation results", "", f"_Generated by `eval/run_eval.py` on {time.strftime('%Y-%m-%d %H:%M')}._", ""]

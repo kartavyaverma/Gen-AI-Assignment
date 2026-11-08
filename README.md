@@ -1,37 +1,35 @@
-# RecipeBot — a grounded recipe chatbot
+# RecipeBot
 
-A chatbot over the [Recipe Box dataset](https://eightportions.com/datasets/Recipes/) (~125k recipes
-from Allrecipes, Epicurious and Food Network) that can:
+A chatbot for the [Recipe Box dataset](https://eightportions.com/datasets/Recipes/), which has about
+125k recipes scraped from Allrecipes, Epicurious and Food Network. Built for the GenAI intern
+assignment. It can:
 
-1. **Search & answer questions** about recipes, and compute statistics over the whole dataset
-2. **Match recipes to what you have** in your kitchen, with hard constraints you can stack up
-3. **Adapt a recipe** when an ingredient is unavailable, backed by evidence from similar recipes
+1. search recipes and answer questions about them, including statistics over the whole dataset
+2. suggest existing recipes for the ingredients you have, with restrictions like "no peanuts"
+3. adapt a recipe when you need to swap an ingredient out, using other recipes as evidence
 
-The main idea: **the LLM never makes up facts or numbers.** It only turns your message into a
-structured request (a small JSON plan). Searching, filtering, counting, ranking and choosing
-substitutes all happen in plain Python over the real data, and every answer shows recipe IDs and
-how it was worked out. When the data can't answer something (calories, cooking time), the bot
-says so.
+The main thing I wanted was for the bot to never make things up. The LLM is only used to work out
+what you're asking for. It turns your message into a small JSON request, and then normal Python
+code does the searching, filtering, counting and ranking on the actual data. Answers show recipe
+IDs and explain how numbers were calculated. If the dataset can't answer something (calories,
+cooking time, ratings), the bot says that instead of guessing.
 
 ```
-you ─► Groq LLM "router" ─► JSON plan ─► session state (active restrictions, last results…)
-                                     └─► search / stats / matching / substitution  (pandas + numpy + TF-IDF)
-                                              └─► answer built from real records, with IDs and method
+your message -> LLM (Groq) -> JSON request -> Python tools over the data -> answer with IDs
 ```
 
----
+## Setup
 
-## Quick start
-
-You need [uv](https://docs.astral.sh/uv/getting-started/installation/) and a free
-[Groq API key](https://console.groq.com/keys). uv installs the right Python (3.12) for you.
+You'll need [uv](https://docs.astral.sh/uv/getting-started/installation/) and a free
+[Groq API key](https://console.groq.com/keys). uv takes care of installing Python 3.12.
 
 ```bash
-git clone <this repo> recipebot && cd recipebot
+git clone https://github.com/kartavyaverma/Gen-AI-Assignment.git
+cd Gen-AI-Assignment
 uv sync
 ```
 
-**1. Add your API key.** Copy `.env.example` to `.env` and paste your key:
+Copy `.env.example` to `.env` (on Windows use `copy` instead of `cp`) and put your key in it:
 
 ```bash
 cp .env.example .env
@@ -39,39 +37,41 @@ cp .env.example .env
 
 ```env
 GROQ_API_KEY=gsk_...
-GROQ_MODEL=openai/gpt-oss-120b   # optional, any Groq chat model with JSON mode works
+GROQ_MODEL=openai/gpt-oss-120b
 ```
 
-**2. Download the dataset** (~53 MB zip with the three JSON files, saved in `data/raw/`):
+The model line is optional. Any Groq chat model that supports JSON mode should work.
+
+Download the dataset (a ~53 MB zip, extracted into `data/raw/`):
 
 ```bash
 uv run python scripts/download_data.py
 ```
 
-**3. Build the index** (one-time, about 1.5 minutes; writes `data/processed/`):
+Build the index. This only needs to be done once and takes about a minute and a half:
 
 ```bash
 uv run recipebot-build
 ```
 
-**4. Run it.** Web UI (Streamlit). It opens http://localhost:8501 in your browser:
+Start the web app (Streamlit, opens on http://localhost:8501):
 
 ```bash
 uv run recipebot-ui
 ```
 
-(This is a shortcut for `uv run streamlit run src/recipebot/app.py`. Stop it with `Ctrl + C`.)
-
-…or in the terminal:
+There's also a terminal version:
 
 ```bash
 uv run recipebot-cli
 ```
 
-If you skip step 3, the app builds the index on its first start. Loading the processed data takes
-about 8 seconds after that.
+If you skip the build step, the app will build the index itself the first time it starts. After
+that it loads in around 8 seconds.
 
-### Things to try (in this order, in one conversation)
+## Example conversation
+
+Try these one after another in the same chat:
 
 ```
 Find a penne pasta recipe
@@ -86,68 +86,68 @@ Find a banana bread recipe
 Take this banana bread recipe and remove the eggs. Use only ingredients that appear in the dataset.
 ```
 
-The sidebar shows the **active state** (restrictions, pantry, recipe in focus) and has one-click
-buttons for all of these examples, plus a **New conversation** button. Every answer has a
-collapsible **"How I understood this"** panel with the router's JSON plan, so you can see exactly
-how the bot read your message.
+The sidebar shows which filters are currently active (search, exclusions, step limit, your
+ingredients, the recipe you're looking at). Restrictions stay on until you remove them or start a
+new chat. Each answer has a "Parsed request" section that shows the JSON the LLM produced, which
+is handy for seeing how a message was understood.
 
----
-
-## Running the evaluation
+## Evaluation
 
 ```bash
-uv run pytest                              # unit tests for normalisation (no data/key needed)
-uv run python eval/run_eval.py --offline   # deterministic tool checks (needs data, no key)
-uv run python eval/run_eval.py             # + 7 multi-turn conversations + one-shot LLM baseline (needs key)
+uv run pytest
+uv run python eval/run_eval.py --offline
+uv run python eval/run_eval.py
 ```
 
-Results go to [`eval/results.md`](eval/results.md), and conversation transcripts go to
-[`eval/transcripts/`](eval/transcripts/). The write-up of what worked and what didn't is in
-[`docs/EVALUATION.md`](docs/EVALUATION.md).
+The first runs unit tests (no data needed). The second runs the tool checks without any LLM calls.
+The third also runs 7 scripted conversations and a comparison against a plain LLM, so it needs the
+API key. Results are written to [eval/results.md](eval/results.md), and the conversation
+transcripts are in [eval/transcripts/](eval/transcripts/). My write-up is in
+[docs/EVALUATION.md](docs/EVALUATION.md).
 
----
+## Project structure
 
-## Project layout
-
-| Path | What's in it |
+| Path | What it does |
 |---|---|
-| `scripts/download_data.py` | Downloads and unzips the dataset |
-| `src/recipebot/data.py` | Loads all three JSON files, stable IDs, step-counting rule, cleaning |
-| `src/recipebot/normalize.py` | Ingredient-line parsing, synonyms, variety families, allergen/diet categories, quantities |
-| `src/recipebot/store.py` | Processed table + TF-IDF indexes + inverted ingredient index (built once, cached) |
-| `src/recipebot/search.py` | Hard filters over the whole dataset, then ranked text search (Task 1) |
-| `src/recipebot/analytics.py` | Counts, percentages, top ingredients, mean/median, rankings (Task 1) |
-| `src/recipebot/matching.py` | Pantry → recipe matching with explainable ranking (Task 2) |
-| `src/recipebot/substitution.py` | Evidence-based substitutions with cited recipe IDs (Task 3) |
-| `src/recipebot/llm.py` | Groq calls: the router prompt, the recipe rewriter, the one-shot baseline |
-| `src/recipebot/agent.py` | Session state and follow-ups; connects the router to the tools |
-| `src/recipebot/app.py` / `ui.py` / `cli.py` | Streamlit chat UI / its launcher / terminal UI |
-| `eval/` | Conversation test set, evaluation runner, results, transcripts |
-| `tests/` | Unit tests |
-| `docs/DESIGN.md` | Design notes: retrieval, normalisation, ranking, computation, uncertainty, external search |
-| `docs/EVALUATION.md` | Evaluation report: what worked, what failed, and why |
-| `docs/AI_USAGE.md` | Disclosure of AI tool use |
+| `scripts/download_data.py` | downloads and unzips the dataset |
+| `src/recipebot/data.py` | loads the three JSON files, assigns IDs, counts steps |
+| `src/recipebot/normalize.py` | cleans ingredient lines, synonyms, allergen/diet tags, quantities |
+| `src/recipebot/store.py` | builds and loads the cached table and search indexes |
+| `src/recipebot/search.py` | filtering and text search (task 1) |
+| `src/recipebot/analytics.py` | counts, percentages, averages, rankings (task 1) |
+| `src/recipebot/matching.py` | matching recipes to your ingredients (task 2) |
+| `src/recipebot/substitution.py` | ingredient substitutions with evidence (task 3) |
+| `src/recipebot/llm.py` | everything that talks to Groq |
+| `src/recipebot/agent.py` | conversation state and deciding which tool to run |
+| `src/recipebot/app.py`, `ui.py` | Streamlit app and its launcher |
+| `src/recipebot/cli.py` | terminal version |
+| `eval/` | test conversations, evaluation script, results, transcripts |
+| `tests/` | unit tests |
+| `docs/DESIGN.md` | design decisions and the reasoning behind them |
+| `docs/EVALUATION.md` | what worked, what didn't, and what I changed |
+| `docs/AI_USAGE.md` | how I used AI tools |
 
-## Dataset notes
+## Notes on the data
 
-- All three files are used. 125,164 raw records → **122,931 usable recipes**. 2,233 were dropped
-  because they were empty: null records, a title with no ingredients, or no instructions.
-- Every recipe keeps a **stable ID** of the form `<source>_<original key>`, e.g.
-  `ar_rmK12Uau.ntP510KeImX506H6Mr6jTu`. This is the dataset's own key with a prefix for the site.
-- The original title, ingredient list and instruction text are stored untouched. For display, the
-  only change is stripping the `ADVERTISEMENT` token that the Allrecipes scraper attached to every
+- All three files are used. Out of 125,164 records, 122,931 are kept. The other 2,233 were empty:
+  null entries, or a title with no ingredients or instructions.
+- Recipe IDs look like `ar_rmK12Uau.ntP510KeImX506H6Mr6jTu`. That's the dataset's own key with
+  the source (`ar`, `epi` or `fn`) in front, so they stay the same on every machine.
+- The original title, ingredients and instructions are kept as they are. The only cleanup for
+  display is removing the word "ADVERTISEMENT", which the Allrecipes scraper attached to every
   ingredient line.
-- The dataset has **no nutrition, times, servings, ratings or cuisine** fields. The bot won't
-  make these up.
+- There's no nutrition, timing, servings, ratings or cuisine information in the dataset.
 
-## Limitations (short version — details in `docs/EVALUATION.md`)
+## Known limitations
 
-- Ingredient normalisation is rule-based. It handles the common cases well, but rare phrasings
-  can produce odd names ("juice", "greens").
-- Allergen/diet detection is keyword-based and works only on what each recipe lists. A packaged
-  product like "semisweet chocolate" may contain milk without saying so. Treat the dietary filters
-  as a strong helper, not a medical guarantee.
-- Search is lexical (TF-IDF). The LLM rewrites vague requests into keywords, but purely
-  conceptual queries ("something cosy for a rainy day") work less well than with embeddings.
-- Step counts follow the source's own line breaks. Food Network often puts the whole method in one
-  paragraph, so those recipes count as 1 step.
+- Ingredient cleanup is rule-based. It covers the common cases, but some unusual lines end up with
+  odd names like "juice" or "greens".
+- Allergen and diet checks are keyword-based and only look at what the recipe lists. Packaged
+  products like semisweet chocolate can contain milk without saying so, so this is a helper, not a
+  medical guarantee.
+- Search uses TF-IDF, not embeddings. It works well for dish names and ingredients, and less well
+  for vague requests like "something cosy for a rainy day".
+- Steps are counted from the line breaks in the original instructions. A lot of Food Network
+  recipes are a single paragraph, so they count as one step.
+
+More detail on all of this is in [docs/EVALUATION.md](docs/EVALUATION.md).

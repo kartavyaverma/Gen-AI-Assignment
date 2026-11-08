@@ -1,11 +1,3 @@
-"""Filters + search (Task 1).
-
-The important idea: hard filters (must contain / must not contain / max steps)
-are applied to the WHOLE dataset as a boolean mask first, and only then do we
-rank what's left by text similarity. That way a restriction like "no dairy" can
-never be lost because the right recipe happened to be outside a top-k list.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -30,16 +22,14 @@ CATEGORY_LABELS = {
 
 @dataclass
 class Filters:
-    """Hard constraints. Every field is optional."""
-
-    include: list[str] = field(default_factory=list)       # must contain ALL of these
-    include_any: list[str] = field(default_factory=list)   # must contain AT LEAST ONE
-    exclude: list[str] = field(default_factory=list)       # free-text or diet words ("dairy", "peanuts", "vegan")
+    include: list[str] = field(default_factory=list)
+    include_any: list[str] = field(default_factory=list)
+    exclude: list[str] = field(default_factory=list)
     max_steps: int | None = None
     min_steps: int | None = None
     max_ingredients: int | None = None
     title_contains: list[str] = field(default_factory=list)
-    source: str | None = None                               # "ar" | "epi" | "fn"
+    source: str | None = None
 
     def is_empty(self) -> bool:
         return not (self.include or self.include_any or self.exclude or self.max_steps
@@ -52,14 +42,13 @@ class Filters:
 @dataclass
 class FilterResult:
     mask: np.ndarray
-    description: list[str]          # human readable, one line per filter
+    description: list[str]
     include_families: list[str]
     exclude_categories: list[str]
     exclude_terms: list[str]
 
 
 def _family_mask(store: RecipeStore, family: str) -> tuple[np.ndarray, str]:
-    """Strict (normalised family) match, falling back to text match if we've never seen the name."""
     names = store.names_for(family)
     if names:
         mask = store.mask_for(family)
@@ -72,7 +61,6 @@ def _family_mask(store: RecipeStore, family: str) -> tuple[np.ndarray, str]:
 
 
 def broad_mask(store: RecipeStore, term: str) -> np.ndarray:
-    """Any ingredient line mentioning the word (includes 'garlic powder' for 'garlic')."""
     rx = term_regex(term)
     return np.fromiter((bool(rx.search(t)) for t in store.ing_text), dtype=bool, count=len(store))
 
@@ -141,15 +129,11 @@ def apply_filters(store: RecipeStore, f: Filters) -> FilterResult:
     return FilterResult(mask, desc, fams, cats, terms)
 
 
-# --------------------------------------------------------------------------- #
-# Ranked search
-# --------------------------------------------------------------------------- #
-
 @dataclass
 class SearchHit:
     pos: int
     score: float
-    coverage: float = 1.0   # share of the query's words found in title/ingredients
+    coverage: float = 1.0
 
 
 @dataclass
@@ -162,7 +146,6 @@ class SearchResult:
 
 
 def text_scores(store: RecipeStore, query: str) -> np.ndarray:
-    """Cosine similarity of the query vs. titles (70%) and ingredient names (30%)."""
     q = clean_line(query)
     t = store.title_mat @ store.title_vec.transform([q]).T
     i = store.ing_mat @ store.ing_vec.transform([q]).T
@@ -183,11 +166,9 @@ def search(store: RecipeStore, query: str, filters: Filters | None = None, k: in
     q = (query or "").strip() or " ".join(filters.include + filters.include_any)
     if q:
         scores = text_scores(store, q)
-        # a query is a request, not a hard filter - but we don't want totally
-        # unrelated recipes either, so require *some* textual overlap.
         eligible = mask & (scores > 0)
     else:
-        scores = -store.n_steps.astype(float)  # no query: simplest recipes first
+        scores = -store.n_steps.astype(float)
         eligible = mask
 
     n_eligible = int(eligible.sum())
@@ -197,9 +178,6 @@ def search(store: RecipeStore, query: str, filters: Filters | None = None, k: in
     order = cand[np.argsort(-scores[cand], kind="stable")[:500]]
     cov_of: dict[int, float] = {}
     if q and (query or "").strip():
-        # Re-rank the top 500 by how many of the query's words the recipe actually
-        # contains (title or ingredients). Without this, a short title like
-        # "Creamy Cocoaccino" beats "Creamy Penne with Peas" for "creamy penne".
         words = _content_words(q)
         if words:
             titles = store.df["title"].to_numpy()
@@ -229,19 +207,12 @@ def _coverage(words: list[str], text: str) -> float:
 
 
 def find_by_title(store: RecipeStore, title: str, k: int = 5) -> list[int]:
-    """Best title matches for 'that banana bread recipe' style references."""
     s = (store.title_mat @ store.title_vec.transform([clean_line(title)]).T).toarray().ravel()
     order = np.argsort(-s)[:k]
     return [int(p) for p in order if s[p] > 0]
 
 
 def line_matches_family(store: RecipeStore, line: str, family: str) -> bool:
-    """Does this ingredient line contain `family`, judged on NORMALISED names?
-
-    '2/3 cup heavy whipping cream' -> canonical 'heavy cream' -> matches 'heavy cream' and
-    'cream', even though the raw text never says 'heavy cream'. Falls back to a plain
-    word match only for names we've never seen.
-    """
     from .normalize import canonical_names, family_of
 
     names = store.names_for(family)
@@ -252,13 +223,11 @@ def line_matches_family(store: RecipeStore, line: str, family: str) -> bool:
 
 
 def evidence_lines(store: RecipeStore, row, families: list[str]) -> dict[str, list[str]]:
-    """For each requested family, the original ingredient lines that matched it."""
     return {fam: [ln for ln in row["ingredients"] if line_matches_family(store, ln, fam)]
             for fam in families}
 
 
 def category_hits(row, categories: list[str]) -> dict[str, list[str]]:
-    """Ingredient lines that trigger each category (used to show *why* something was excluded)."""
     from .normalize import line_categories
 
     out: dict[str, list[str]] = {c: [] for c in categories}

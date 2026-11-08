@@ -1,8 +1,3 @@
-"""Download the Recipe Box dataset (3 JSON files) into data/raw/.
-
-Usage:  uv run python scripts/download_data.py
-"""
-
 import io
 import sys
 import urllib.request
@@ -10,7 +5,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from recipebot.config import DATASET_URL, RAW_DIR, SOURCES  # noqa: E402
+from recipebot.config import DATASET_URL, RAW_DIR, SOURCES
 
 
 def main() -> None:

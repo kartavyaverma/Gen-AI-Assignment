@@ -29,13 +29,18 @@ _Why this test:_ PDF example: remove eggs from banana bread using only dataset i
 
 **Bot:**
 
-🔎 **Search:** banana bread · **Active constraints:** none
+**Search:** banana bread · **Filters:** none
 12,181 recipes pass every constraint and share words with the query. Showing 1–5:
 
+
 **1. Banana Bread** — `ar_BoBTO3QUO3Ci.0kayPs8.CfDU5oEXuu` · Allrecipes · 3 steps · 7 ingredients
+
 **2. Banana Bread** — `fn_mhYRmKoUCwpXz5XIJ5.WG6FxMZwIR3m` · Food Network · 6 steps · 10 ingredients
+
 **3. Banana Bread** — `epi_ZQd7/SuSfF5BCcq998A7.Zyhfaqusf6` · Epicurious · 6 steps · 10 ingredients
+
 **4. Banana Bread** — `epi_Br9fwQQSw3wDvb/cp/nyL0LjUWtMfRi` · Epicurious · 13 steps · 10 ingredients
+
 **5. Banana Bread** — `fn_J9d89klHetj.4b5OKiASicRh8tfXK6m` · Food Network · 2 steps · 10 ingredients
 
 Say *show 2* for the full recipe, *more* for more results, or add a restriction.
@@ -107,9 +112,12 @@ Supporting recipes (similar dishes that do this):
 3. Bake at 350 degrees F (175 degrees C) for 1 hour, or until a wooden toothpick inserted in the center comes out clean.
 
 **What will probably change** _(prediction - not tested, and not stated in the dataset)_
-- The bread will be extra moist and have a slight tang from the yogurt.
-- Without eggs, the crumb may be a bit denser and rise slightly less, giving a softer texture.
-- ⚠️ Yogurt does not provide the same structure as eggs, so the loaf may be a bit more crumbly and rise less than the original.
+- The yogurt adds extra moisture and a slight tang, resulting in a softer, more tender crumb.
+- Because yogurt lacks the structure of eggs, the loaf may be a bit denser and rise slightly less.
+- The slight acidity of yogurt can react with the baking soda, giving a modest boost to leavening.
+- ⚠️ The batter may be wetter than the original; if it looks very loose, add 1-2 tbsp extra flour to achieve a pourable but thick consistency.
+- ⚠️ Yogurt does not provide the same binding as eggs; the bread may be slightly more crumbly when sliced.
+- ⚠️ Avoid overheating the yogurt when mixing; keep ingredients at room temperature to prevent curdling.
 
 _Safety note: I checked the new ingredient list against my keyword lists for your restrictions and found nothing, but that is not a medical guarantee. Always check packaged ingredient labels for allergens._
 

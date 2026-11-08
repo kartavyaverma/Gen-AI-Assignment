@@ -1,17 +1,3 @@
-"""Thin wrapper around Groq.
-
-The LLM has exactly two jobs in this project:
-
-1. ROUTER  - read the user's message (plus a summary of the conversation state)
-             and return a small JSON "plan": which tool to call and with what
-             arguments / what to change in the active constraints.
-2. REWRITER - after the substitution module has picked a swap *from evidence*,
-             rewrite the ingredient list and method so they read naturally.
-
-It never produces numbers, never picks recipes, and never decides whether a
-swap is supported - those are all done in code so they can be checked.
-"""
-
 from __future__ import annotations
 
 import json
@@ -40,7 +26,6 @@ def _get_client():
 
 
 def _create(**kwargs):
-    """Call Groq with a small retry for the free tier's rate limits."""
     import groq
 
     client = _get_client()
@@ -73,10 +58,6 @@ def chat_text(system: str, user: str, temperature: float = 0.0, max_tokens: int 
     return resp.choices[0].message.content or ""
 
 
-# --------------------------------------------------------------------------- #
-# 1. Router
-# --------------------------------------------------------------------------- #
-
 ROUTER_PROMPT = """You are the request parser for a recipe chatbot built on the Recipe Box dataset
 (~123k recipes from Allrecipes, Epicurious and Food Network). The dataset ONLY has, per recipe:
 an ID, a title, an ingredient list (free text lines) and instruction text. It has NO nutrition,
@@ -99,7 +80,8 @@ Output JSON with these keys (omit keys you don't need):
      "match"        - user lists ingredients they HAVE and wants recipes that use them
      "substitute"   - adapt a recipe: remove/replace an ingredient, make it X-free
      "unsupported"  - asks for info the dataset doesn't have (nutrition, calories, time, cost...)
-     "reset"        - user wants to start over / clear all constraints
+     "reset"        - user ONLY wants to start over / clear everything, with no new request in the
+                      same message ("Forget that. Find me a beef stew." is a "search" with new_search true)
      "help" | "chitchat",
 
   "constraints": {            // changes to the ACTIVE hard constraints. They persist across turns
@@ -169,6 +151,7 @@ Rules:
 - A question like "how many recipes contain garlic and onion" is stats/count with include ["garlic","onion"].
 - "which five have the fewest steps among tomato recipes" -> stats rank_by_steps, include ["tomato"], n 5, order "asc".
 - Use singular, plain ingredient words ("tomato", "egg", "heavy cream").
+- Copy dish and ingredient words exactly as the user spelled them in "query" (only fix obvious user typos).
 - If the user asks about time/calories/nutrition/servings/cost, use "unsupported".
 """
 
@@ -177,10 +160,6 @@ def route(message: str, state_summary: str) -> dict:
     user = f"CONVERSATION STATE:\n{state_summary}\n\nUSER MESSAGE:\n{message}"
     return chat_json(ROUTER_PROMPT, user)
 
-
-# --------------------------------------------------------------------------- #
-# 2. Rewriter (Task 3)
-# --------------------------------------------------------------------------- #
 
 REWRITE_PROMPT = """You adapt an existing recipe after an ingredient substitution has ALREADY been chosen
 from evidence. Do not choose a different substitute. Keep every other ingredient line exactly as
@@ -215,7 +194,6 @@ def rewrite_recipe(row, target_lines, substitute, amount, evidence, restrictions
     out = chat_json(REWRITE_PROMPT, user, max_tokens=1800)
     if not isinstance(out.get("ingredients"), list) or not isinstance(out.get("instructions"), list):
         raise ValueError("rewrite JSON missing ingredients/instructions")
-    # the model sometimes numbers its own steps ("1. Boil...") - we number them ourselves
     out["instructions"] = [re.sub(r"^\s*(?:step\s*)?\d+[.):]\s*", "", str(s), flags=re.I)
                            for s in out["instructions"]]
     eff = list(out.get("effects") or [])
@@ -223,10 +201,6 @@ def rewrite_recipe(row, target_lines, substitute, amount, evidence, restrictions
     out["effects"] = eff
     return out
 
-
-# --------------------------------------------------------------------------- #
-# 3. Plain one-shot baseline (used only by the evaluation to show what goes wrong)
-# --------------------------------------------------------------------------- #
 
 def one_shot_answer(question: str) -> str:
     return chat_text(

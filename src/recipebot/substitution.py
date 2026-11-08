@@ -1,19 +1,3 @@
-"""Evidence-based ingredient substitution (Task 3).
-
-Order of evidence, strongest first:
-
-1. DIRECT  - recipes similar to this one (by title) that don't use the target
-             ingredient but do use the candidate substitute. We cite their IDs
-             and quote the exact ingredient line, so amounts come from real recipes.
-2. INDIRECT - the candidate is used without the target ingredient somewhere in
-             the dataset, but not in recipes that look like this dish.
-3. GENERAL COOKING KNOWLEDGE - the role table below (e.g. "~1/4 cup applesauce
-             per egg"). This is NOT from the dataset and is always labelled as such.
-
-We never claim a swap is medically safe; we only check that the new ingredient
-list doesn't trip the user's restriction filters, and say that clearly.
-"""
-
 from __future__ import annotations
 
 import re
@@ -26,10 +10,6 @@ from .normalize import clean_line, line_categories, normalize_user_ingredient, r
 from .search import CATEGORY_LABELS, broad_mask, category_hits, line_matches_family, term_hits
 from .store import RecipeStore
 
-# --------------------------------------------------------------------------- #
-# General cooking knowledge (labelled as such whenever it is shown)
-# --------------------------------------------------------------------------- #
-# target -> (role of the ingredient, [(candidate, search regex term, amount guidance, expected effect)])
 SUB_TABLE: dict[str, tuple[str, list[tuple[str, str, str, str]]]] = {
     "egg": (
         "binding (holds the crumb together), some lift/structure, and moisture",
@@ -119,7 +99,6 @@ SUB_TABLE: dict[str, tuple[str, list[tuple[str, str, str, str]]]] = {
     ),
 }
 
-# map whatever the user calls the ingredient to a row of the table
 TARGET_ALIASES = {
     "egg": "egg", "eggs": "egg", "egg yolk": "egg", "egg white": "egg",
     "heavy cream": "cream", "cream": "cream", "whipping cream": "cream", "half-and-half": "cream",
@@ -135,7 +114,7 @@ class SubRequest:
     recipe_id: str
     remove: str
     restrictions: list[str] = field(default_factory=list)
-    dataset_only: bool = False      # "use only ingredients that appear in the dataset"
+    dataset_only: bool = False
 
 
 @dataclass
@@ -143,25 +122,21 @@ class Candidate:
     name: str
     amount: str
     effect: str
-    direct: list[tuple[str, str, str]] = field(default_factory=list)   # (id, title, line)
-    n_direct: int = 0          # similar recipes WITHOUT the target that use this candidate
-    rate_without: float = 0.0  # ... as a share of all similar recipes without the target
-    rate_with: float = 0.0     # share of similar recipes WITH the target that use it anyway
-    n_indirect: int = 0        # any recipe in the dataset without the target that uses it
+    direct: list[tuple[str, str, str]] = field(default_factory=list)
+    n_direct: int = 0
+    rate_without: float = 0.0
+    rate_with: float = 0.0
+    n_indirect: int = 0
     in_dataset: int = 0
     rejected: str | None = None
-    contrast_ok: bool = True   # were there enough similar recipes WITH the target to compare against?
+    contrast_ok: bool = True
 
     @property
     def replaces(self) -> bool:
-        """Is it noticeably MORE common when the target is absent? If it's just as
-        common either way (olive oil in pasta), it's co-occurring, not substituting."""
         return self.rate_without > 1.2 * self.rate_with + 0.01
 
     @property
     def strength(self) -> str:
-        # Without a "with target" group we can't tell substitution from co-occurrence,
-        # so the best we'll ever call it is "limited".
         if self.n_direct >= 3 and self.replaces and self.contrast_ok:
             return "direct"
         if self.n_direct >= 1 and self.replaces:
@@ -178,17 +153,14 @@ class Candidate:
 
 
 def _target_lines(store: RecipeStore, row, remove: str) -> tuple[list[str], list[str], str]:
-    """Which lines of the recipe are we replacing? Returns (lines, categories, label)."""
     cats, term = resolve_restriction(remove)
     if cats and not term:
         hits = category_hits(row, cats)
         lines = sorted({ln for c in cats for ln in hits[c]}, key=row["ingredients"].index)
         return lines, cats, ", ".join(CATEGORY_LABELS.get(c, c) for c in cats)
     fam = normalize_user_ingredient(remove)
-    # normalised-name match first ("heavy whipping cream" IS heavy cream), raw text as a fallback
     lines = [ln for ln in row["ingredients"] if line_matches_family(store, ln, fam)]
     lines = lines or term_hits(row, fam) or term_hits(row, remove)
-    # "cream" should not catch "cream cheese"/"sour cream"/"ice cream" lines
     if fam in ("cream", "heavy cream"):
         lines = [ln for ln in lines if not any(x in ln.lower() for x in ("cream cheese", "sour cream", "ice cream", "cream of"))]
     return lines, [], fam
@@ -205,12 +177,6 @@ def _restricted_categories(restrictions: list[str]) -> tuple[set[str], set[str]]
 
 
 def _siblings(store: RecipeStore, pos: int, k: int = 400) -> np.ndarray:
-    """The 'same kind of dish' neighbourhood: 60% title similarity + 40% ingredient similarity.
-
-    Title alone fails on names like "Penne with Sausage and Cheesy Garlic Bread"
-    (it pulls in garlic breads); ingredients alone pull in unrelated dishes that
-    happen to share a pantry.
-    """
     t = (store.title_mat @ store.title_mat[pos].T).toarray().ravel()
     i = (store.ing_mat @ store.ing_mat[pos].T).toarray().ravel()
     sims = 0.6 * t + 0.4 * i
@@ -234,18 +200,14 @@ def suggest_substitutes(store: RecipeStore, req: SubRequest, rewriter=None) -> t
     restricted_cats, restricted_terms = _restricted_categories(req.restrictions)
     restricted_cats |= set(target_cats)
 
-    # Other lines that ALSO break the user's restrictions (e.g. "no dairy" but the
-    # recipe has half-and-half as well as cream). We must not quietly leave them in.
     other_violations = [ln for ln in row["ingredients"] if ln not in lines and
                         (_violation(ln, restricted_cats, restricted_terms))]
 
-    # target masks: does a recipe contain the thing we're removing?
     if target_cats:
         has_target = np.zeros(len(store), dtype=bool)
         for c in target_cats:
             has_target |= store.category_mask.get(c, np.zeros(len(store), dtype=bool))
     elif store.names_for(label):
-        # normalised names, so "coconut cream" doesn't count as cream
         has_target = store.mask_for(label)
     else:
         has_target = broad_mask(store, label)
@@ -286,7 +248,6 @@ def suggest_substitutes(store: RecipeStore, req: SubRequest, rewriter=None) -> t
             cand.direct.append((r["id"], r["title"], ln))
         candidates.append(cand)
 
-    # data-driven: what do the "without" versions use more often than the "with" versions?
     discovered = _over_represented(store, sib_with, sib_without, set(row["names"]), restricted_cats)
 
     usable = [c for c in candidates if not c.rejected]
@@ -294,7 +255,6 @@ def suggest_substitutes(store: RecipeStore, req: SubRequest, rewriter=None) -> t
     best = usable[0] if usable and usable[0].strength != "none" else None
     weak = best is not None and best.strength not in ("direct", "limited")
 
-    # ---------- write the answer ----------
     out = [f"### Adapting: {row['title']} (`{row['id']}`)",
            f"**Removing:** {label} — affected lines: " + "; ".join(f"'{ln}'" for ln in lines)]
     if req.restrictions:
@@ -369,7 +329,7 @@ def suggest_substitutes(store: RecipeStore, req: SubRequest, rewriter=None) -> t
             rewrite = rewriter(row=row, target_lines=lines, substitute=best.name, amount=best.amount,
                                evidence=best.direct, restrictions=req.restrictions,
                                other_violations=other_violations)
-        except Exception as exc:  # network / quota problems shouldn't kill the answer
+        except Exception as exc:
             out.append(f"\n_(LLM rewrite unavailable: {exc}; using the simple rule-based rewrite.)_")
             rewrite = None
     if rewrite:
@@ -380,7 +340,6 @@ def suggest_substitutes(store: RecipeStore, req: SubRequest, rewriter=None) -> t
     if not rewrite:
         rewrite = _rule_based_rewrite(row, lines, best)
 
-    # final, independent check of whatever we're about to show
     still_bad = [ln for ln in rewrite["ingredients"] if _violation(ln, restricted_cats, restricted_terms)
                  and "replaces:" not in ln]
     data["still_violating"] = still_bad
@@ -446,7 +405,6 @@ def _check_rewrite(ingredients: list[str], cats: set, terms: set, label: str, ta
 
 
 def _rule_based_rewrite(row, lines: list[str], best: Candidate) -> dict:
-    """Simple deterministic fallback: swap the lines, annotate the method."""
     ings = []
     swapped = False
     for ln in row["ingredients"]:
@@ -456,7 +414,6 @@ def _rule_based_rewrite(row, lines: list[str], best: Candidate) -> dict:
                 swapped = True
             continue
         ings.append(ln)
-    # replace mentions of the removed ingredient in the method, e.g. "beaten eggs" -> "the applesauce"
     names = sorted({n for ln in lines for n in _line_names(ln)}, key=len, reverse=True)
     steps = []
     for s in row["steps"]:
@@ -474,5 +431,5 @@ def _line_names(line: str) -> list[str]:
     out = []
     for n in canonical_names(line):
         out.append(n)
-        out.append(n.split()[-1])  # "heavy cream" -> also "cream"
+        out.append(n.split()[-1])
     return out

@@ -11,8 +11,14 @@ _Why this test:_ PDF example: replace cream in a pasta without dairy. The chosen
 ```json
 {
   "intent": "search",
+  "constraints": {
+    "add_exclude": [],
+    "remove_exclude": [],
+    "max_steps": null,
+    "clear_max_steps": false
+  },
   "search": {
-    "query": "penne pasta",
+    "query": "creamy penne pasta",
     "add_include": [
       "heavy cream"
     ],
@@ -25,19 +31,24 @@ _Why this test:_ PDF example: replace cream in a pasta without dairy. The chosen
 
 **Bot:**
 
-🔎 **Search:** penne pasta · **Active constraints:** must include heavy cream
-337 recipes pass every constraint and share words with the query. Showing 1–5:
+**Search:** creamy penne pasta · **Filters:** must include heavy cream
+626 recipes pass every constraint and share words with the query. Showing 1–5:
 
-**1. Penne Pasta with Sausage and Cheesy Garlic Bread** — `fn_lh9vsC29xv9U6.ywWsPcsJL/I31Bnha` · Food Network · 7 steps · 14 ingredients
-   - contains heavy cream: _1/4 cup heavy cream_
-**2. Pepperoni Penne** — `ar_mvenq6TC20.ln4I3ub7aVIoPJzX/Udi` · Allrecipes · 4 steps · 8 ingredients
-   - contains heavy cream: _1 cup heavy whipping cream_
-**3. Penne with Five Cheeses** — `fn_WLt0/oFuLw9V2/v6rGC54Hcpx0irl.u` · Food Network · 5 steps · 11 ingredients
-   - contains heavy cream: _2 cups heavy cream_
-**4. Penne Russo a la Vodka** — `ar_4/X8.H3Jsz5imVukzjRXy5FEz83A/Nq` · Allrecipes · 2 steps · 11 ingredients
-   - contains heavy cream: _1 cup heavy cream_
-**5. Thyme Pasta Frittata** — `fn_G.1x5l6/.SCd6b2SINmxz5z2FCd696S` · Food Network · 3 steps · 10 ingredients
-   - contains heavy cream: _3 tablespoons whipping cream_
+
+**1. Creamy Pumpkin Pasta** — `ar_v37bt9V/V/yvSeFEP6XWiOWN73ep9pC` · Allrecipes · 3 steps · 11 ingredients
+- contains heavy cream: _2/3 cup heavy whipping cream_
+
+**2. 3-Ingredient Creamy Pumpkin Pasta** — `epi_OnoB5F/sLs8t/3UUmn.Hsmr1v8HjUSK` · Epicurious · 4 steps · 5 ingredients
+- contains heavy cream: _1 1/4 cups heavy cream_
+
+**3. Penne Pasta with Sausage and Cheesy Garlic Bread** — `fn_lh9vsC29xv9U6.ywWsPcsJL/I31Bnha` · Food Network · 7 steps · 14 ingredients · ⚠️ partial match (67% of query words)
+- contains heavy cream: _1/4 cup heavy cream_
+
+**4. One Recipe, Two Meals: Penne with a Creamy Tomato Vodka Sauce** — `fn_7XHa/jzELyj6nhcXaRChTkp032PQMp2` · Food Network · 6 steps · 10 ingredients
+- contains heavy cream: _1/2 cup heavy cream_
+
+**5. Creamy Garlic Pasta with Mushrooms and Prosciutto** — `epi_uUs4VGbDbASbOaz2esUPmJvkEsbFtZq` · Epicurious · 5 steps · 11 ingredients
+- contains heavy cream: _3/4 cup whipping cream_
 
 Say *show 2* for the full recipe, *more* for more results, or add a restriction.
 
@@ -64,7 +75,7 @@ Say *show 2* for the full recipe, *more* for more results, or add a restriction.
     "restrictions": [
       "dairy"
     ],
-    "dataset_only": true
+    "dataset_only": false
   }
 }
 ```
@@ -72,69 +83,62 @@ Say *show 2* for the full recipe, *more* for more results, or add a restriction.
 
 **Bot:**
 
-### Adapting: Penne Pasta with Sausage and Cheesy Garlic Bread (`fn_lh9vsC29xv9U6.ywWsPcsJL/I31Bnha`)
-**Removing:** heavy cream — affected lines: '1/4 cup heavy cream'
+### Adapting: Creamy Pumpkin Pasta (`ar_v37bt9V/V/yvSeFEP6XWiOWN73ep9pC`)
+**Removing:** heavy cream — affected lines: '2/3 cup heavy whipping cream'
 **Your restrictions:** dairy
 **Role of heavy cream in this dish** _(general cooking knowledge, not from the dataset)_: richness (fat), body, and a smooth sauce that coats the food
 
-**Dataset evidence.** I found 36 recipes with similar titles. 0 of them use heavy cream and 36 don't.
-⚠️ Only 0 similar recipe(s) use heavy cream, so I can't compare 'with' vs 'without'. That means I can't tell a real substitute from something that just appears in this kind of dish anyway. No candidate is rated higher than *limited*.
+**Dataset evidence.** I found 22 recipes with similar titles. 4 of them use heavy cream and 18 don't.
 
 | Substitute | Evidence | Similar recipes **without** heavy cream using it | Similar recipes **with** heavy cream using it | Anywhere in dataset without heavy cream |
 |---|---|---:|---:|---:|
-| olive oil + pasta water | limited | 19 (53%) | 0% | 31,650 |
-| broth thickened with cornstarch | limited | 2 (6%) | 0% | 12,604 |
-| coconut milk | indirect | 0 (0%) | 0% | 1,324 |
-| coconut cream | indirect | 0 (0%) | 0% | 96 |
-| cashews (blended) | indirect | 0 (0%) | 0% | 543 |
+| olive oil + pasta water | direct | 7 (39%) | 25% | 31,650 |
+| coconut milk | limited | 1 (6%) | 0% | 1,324 |
+| coconut cream | limited | 1 (6%) | 0% | 96 |
+| cashews (blended) | limited | 1 (6%) | 0% | 543 |
+| broth thickened with cornstarch | co-occurs only | 6 (33%) | 75% | 12,604 |
 | soy milk | indirect | 0 (0%) | 0% | 240 |
 | almond milk | indirect | 0 (0%) | 0% | 266 |
 
 _How to read this: a substitute only counts as evidence if it is **more common** in the similar recipes that skip heavy cream than in the ones that use it. If it's equally common either way it just co-occurs (e.g. olive oil in pasta) and doesn't tell us it replaces anything._
 
-Other ingredients that show up more often in the similar recipes *without* heavy cream (just a data signal, not necessarily a substitute): parsley (14 recipes), oregano (9 recipes), italian bread (6 recipes), zucchini (3 recipes), paprika (3 recipes)
+Other ingredients that show up more often in the similar recipes *without* heavy cream (just a data signal, not necessarily a substitute): cinnamon (8 recipes), pumpkin puree (11 recipes), egg (4 recipes), vanilla extract (3 recipes), sage (3 recipes)
 
 ### Suggested change: replace heavy cream with **olive oil + pasta water**
-⚠️ Evidence is **limited**: only a few similar recipes do this.
 Supporting recipes (similar dishes that do this):
-- `fn_O6AnyXtraQPjPjvXJHxqs.d7gt0F8ua` — Grilled Cheesy Garlic Bread: uses _'1/2 cup virgin olive oil'_
-- `ar_nvQzTEX.J7/2LmKnF8KjsR6aCqNHGxO` — Creamy Penne Pasta: uses _'2 tablespoons olive oil'_
-- `fn_RvZR9.CbNY3mVGdNFzT6QDJ2oq.TZlu` — Garlic Bread: uses _'1/4 cup olive oil'_
+- `ar_WNqifUmN8xhR/bA1mSeti.ZtxCn0/FW` — Pumpkin Pasta: uses _'1 tablespoon olive oil'_
+- `ar_qcaXgvRsaURz35dwoz2rMhpCSYlt0vG` — Frugal Pumpkin Pasta: uses _'2 tablespoons olive oil'_
+- `ar_nO670b2udJoZkwc69ZAp84G9fROBmu2` — Pumpkin Pasta with Cheddar: uses _'1 teaspoon olive oil'_
 - Amount guidance _(general cooking knowledge)_: a few tbsp olive oil emulsified with starchy pasta water
-- Also supported: broth thickened with cornstarch (2 similar recipes)
+- Also supported: coconut milk (1 similar recipes); cashews (blended) (1 similar recipes)
 
-⚠️ **Other ingredients in this recipe also break your restrictions:** '1 cup shredded mozzarella cheese'
+⚠️ **Other ingredients in this recipe also break your restrictions:** '1 tablespoon shredded Parmesan cheese, or more to taste'
 
 **Updated ingredients**
-- 1 pound penne pasta
 - 2 tablespoons olive oil
-- 1/2 medium yellow onion, diced
-- 1 tablespoon garlic, chopped
-- 1 tablespoon Italian seasoning mix
-- 1/4 teaspoon crushed red pepper flake, optional
-- 4 Italian-style hot pork sausages, cut into 1/2-inch slices
-- 1 (28-ounce) can diced tomatoes, drained
-- Kosher salt and freshly ground black pepper
-- 2 tablespoons olive oil mixed with 2 tablespoons reserved pasta water (emulsified)
-- Basil leaves, for garnish
-- 1/2 store-bought garlic bread (save other half for Pizza)
-- 1 cup shredded dairy-free mozzarella-style cheese
-- 1/2 teaspoon Italian seasoning mix
+- 1 onion, finely chopped
+- 1 pound pumpkin - peeled, seeded, and cubed
+- 2 cloves garlic, crushed
+- 1 cup chicken stock
+- 1 pinch ground nutmeg
+- 9 ounces penne pasta
+- 6 ounces bacon, cut into strips
+- 1 tablespoon chopped fresh parsley
+- 2-3 tablespoons olive oil, emulsified with reserved starchy pasta water
+- 1 tablespoon nutritional yeast, or more to taste
 
 **Revised instructions**
-1. Bring large pot of salted water to a boil over high heat. Cook pasta according to package directions.
-2. In a large deep skillet over medium-high heat, add olive oil. Add onion, garlic, Italian seasoning mix and red pepper flakes, if using. Stir frequently and cook until the onions are soft and fragrant, about 3 to 4 minutes. Add sausage and cook for 1 minute. Add can of crushed tomatoes, stirring all the ingredients together to combine. Season with kosher salt and freshly ground black pepper, to taste and let simmer for 10 minutes. Stir in the olive oil and pasta water mixture (2 Tbsp olive oil + 2 Tbsp reserved pasta water) and mix well to create a creamy sauce.
-3. Drain the pasta and add directly to the skillet with the sauce Toss the pasta to coat with the sauce. Transfer to a serving bowl or platter and garnish with basil leaves. Serve with the cheesy garlic bread.
-4. For the cheesy garlic bread:
-5. Preheat oven to 400 degrees F.
-6. Sprinkle dairy-free cheese and Italian seasoning over garlic bread half. Place on tinfoil lined baking sheet and cook in the oven for 10 to 12 minutes, until the cheese is melted and bread is warmed through. Slice and serve.
-7. Use the leftover garlic bread from this recipe to make Garlic Bread Pizza.
+1. Heat oil in a pot over medium heat; cook and stir onion until slightly tender, about 3 minutes. Add pumpkin and garlic; continue cooking for 3 minutes. Add chicken stock and nutmeg; bring to a boil. Reduce heat to medium-low, cover, and simmer until pumpkin is tender, about 10 minutes more.
+2. Bring a large pot of lightly salted water to a boil; add penne and cook, stirring occasionally, until tender yet firm to the bite, about 11 minutes. Drain and transfer to serving bowls.
+3. Mix bacon and parsley into pumpkin mixture; cook, stirring frequently, until bacon is cooked, 2 to 5 minutes. Add the olive oil and a splash of reserved pasta water, stirring to emulsify, and cook until heated through, about 2 minutes more. Spoon sauce over pasta and top with nutritional yeast.
 
 **What will probably change** _(prediction - not tested, and not stated in the dataset)_
-- The olive oil‑pasta‑water emulsion will give the sauce a lighter, less buttery mouthfeel than heavy cream, but still provide a silky coating for the pasta.
-- Dairy‑free mozzarella will melt, though it may be less stretchy and slightly less rich in flavor than traditional mozzarella.
-- ⚠️ The dairy‑free cheese may not melt as uniformly as regular mozzarella, potentially resulting in a slightly grainier texture on the garlic bread.
-- ⚠️ The olive oil and pasta‑water mixture may produce a thinner sauce than heavy cream; you may need to let it reduce a bit longer to achieve desired thickness.
+- The olive oil‑pasta‑water emulsion will give a lighter, silkier sauce rather than the rich, thick mouthfeel of heavy cream.
+- Nutritional yeast provides a cheesy, umami flavor but lacks the melt and texture of Parmesan.
+- Overall the dish remains creamy‑sounding while being dairy‑free, though it may be slightly less indulgent.
+- ⚠️ Olive oil cannot be whipped; the sauce relies on emulsifying with starchy pasta water, so reserve enough cooking water before draining.
+- ⚠️ Nutritional yeast does not melt like Parmesan; the topping will be more powdery and may require extra seasoning to achieve desired flavor.
+- ⚠️ If the sauce seems too thin, add a bit more pasta water or a drizzle of olive oil to reach desired consistency.
 
 _Safety note: I checked the new ingredient list against my keyword lists for your restrictions and found nothing, but that is not a medical guarantee. Always check packaged ingredient labels for allergens._
 
