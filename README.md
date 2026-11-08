@@ -48,6 +48,10 @@ Download the dataset (a ~53 MB zip, extracted into `data/raw/`):
 uv run python scripts/download_data.py
 ```
 
+If the download is blocked for some reason, grab `recipes_raw.zip` from the
+[dataset page](https://eightportions.com/datasets/Recipes/) and unzip the three JSON files into
+`data/raw/` yourself.
+
 Build the index. This only needs to be done once and takes about a minute and a half:
 
 ```bash

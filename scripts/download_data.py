@@ -15,7 +15,8 @@ def main() -> None:
         return
 
     print(f"Downloading {DATASET_URL} (~53 MB)...")
-    with urllib.request.urlopen(DATASET_URL) as resp:
+    req = urllib.request.Request(DATASET_URL, headers={"User-Agent": "Mozilla/5.0 (compatible; recipebot-downloader)"})
+    with urllib.request.urlopen(req) as resp:
         payload = resp.read()
 
     with zipfile.ZipFile(io.BytesIO(payload)) as zf:
