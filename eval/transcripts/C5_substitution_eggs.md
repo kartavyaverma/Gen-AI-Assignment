@@ -11,12 +11,6 @@ _Why this test:_ PDF example: remove eggs from banana bread using only dataset i
 ```json
 {
   "intent": "search",
-  "constraints": {
-    "add_exclude": [],
-    "remove_exclude": [],
-    "max_steps": null,
-    "clear_max_steps": false
-  },
   "search": {
     "query": "banana bread",
     "add_include": [],
@@ -108,16 +102,15 @@ Supporting recipes (similar dishes that do this):
 
 **Revised instructions**
 1. Grease and flour two 7x3 inch loaf pans. Preheat oven to 350 degrees F (175 degrees C).
-2. In one bowl, whisk together flour, soda, salt, and sugar. Mix in 1/2 cup plain yogurt, melted butter, and mashed bananas. Stir in nuts if desired. Pour into prepared pans.
+2. In one bowl, whisk together flour, soda, salt, and sugar. Mix in plain yogurt, melted butter, and mashed bananas. Stir in nuts if desired. Pour into prepared pans.
 3. Bake at 350 degrees F (175 degrees C) for 1 hour, or until a wooden toothpick inserted in the center comes out clean.
 
 **What will probably change** _(prediction - not tested, and not stated in the dataset)_
-- The yogurt adds extra moisture and a slight tang, resulting in a softer, more tender crumb.
-- Because yogurt lacks the structure of eggs, the loaf may be a bit denser and rise slightly less.
-- The slight acidity of yogurt can react with the baking soda, giving a modest boost to leavening.
-- ⚠️ The batter may be wetter than the original; if it looks very loose, add 1-2 tbsp extra flour to achieve a pourable but thick consistency.
-- ⚠️ Yogurt does not provide the same binding as eggs; the bread may be slightly more crumbly when sliced.
-- ⚠️ Avoid overheating the yogurt when mixing; keep ingredients at room temperature to prevent curdling.
+- The yogurt adds extra moisture, making the crumb softer and slightly more tender.
+- A mild tang from the yogurt may give a subtle flavor contrast to the sweet bananas.
+- Without eggs, the loaf may have a slightly less airy texture and may be a bit denser.
+- ⚠️ Yogurt does not provide the same leavening power as eggs, so the bread may be a bit denser.
+- ⚠️ If using flavored yogurt, it could alter the taste.
 
 _Safety note: I checked the new ingredient list against my keyword lists for your restrictions and found nothing, but that is not a medical guarantee. Always check packaged ingredient labels for allergens._
 

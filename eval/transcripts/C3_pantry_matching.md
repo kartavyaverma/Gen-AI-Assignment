@@ -24,7 +24,11 @@ _Why this test:_ PDF example request, then 'Exclude eggs too' must update the re
       "tomatoes",
       "rice"
     ],
-    "prefer": "fewest_missing",
+    "add_have": [],
+    "remove_have": [],
+    "prefer": "max_used",
+    "max_missing": null,
+    "must_use_all": false,
     "n": 5,
     "new_request": true
   }
@@ -36,39 +40,34 @@ _Why this test:_ PDF example request, then 'Exclude eggs too' must update the re
 
 **Your ingredients (normalised):** egg, onion, tomato, rice
 **Hard constraints:** excludes **peanuts** (checked every ingredient line against 4 peanut terms); at most 6 instruction steps
-**Ranking:** fewest extra ingredients → most of your ingredients used → fewest steps (salt, pepper and water are assumed staples and not counted as missing)
+**Ranking:** most of your ingredients used → fewest extra ingredients → fewest steps (salt, pepper and water are assumed staples and not counted as missing)
 
 52,415 recipes satisfy every constraint and use at least one of your ingredients. Top 5:
 
-**1. Steakhouse Onion Rings** — `fn_2i2JF.Q2bD0/0Rc3rFk/zWI7vTnthdu`
-- Uses: egg, onion
-- Missing: nothing beyond staples
-- Not used: tomato, rice
-- Steps: 2 · Why here: Top match: uses 2/4 of your ingredients, needs 0 extra, 2 steps.
+**1. Fiesta Egg Skillet** — `ar_QyVarQzRar/zTLW7ExZpc6qbYC1xQF6`
+- Uses: egg, onion, tomato, rice
+- Missing: olive oil, heavy cream, ham, green chili, cheddar cheese
+- Steps: 5 · Why here: Top match: uses 4/4 of your ingredients, needs 5 extra, 5 steps.
 
-**2. Rice Cake** — `fn_XWh0MhuWrZJdmd/DXSa4AUs6PSLVmNu`
-- Uses: egg, onion
-- Missing: nothing beyond staples
-- Not used: tomato, rice
-- Steps: 4 · Why here: uses 2/4 of your ingredients, needs 0 extra, 4 steps — below the previous one because it has more steps
+**2. Curried Rice With Smoked Trout** — `fn_Akk/zqCo1n3wzwavH0..w6QIF5363M2`
+- Uses: egg, onion, tomato, rice
+- Missing: olive oil, curry powder, cilantro, greens, juice, smoked trout
+- Steps: 3 · Why here: uses 4/4 of your ingredients, needs 6 extra, 3 steps — below the previous one because it needs more extra ingredients
 
-**3. Divine Hard-Boiled Eggs** — `ar_GFZiUDrChDfN4bXTTNrraXqfRkle9oO`
-- Uses: egg
-- Missing: nothing beyond staples
-- Not used: onion, tomato, rice
-- Steps: 1 · Why here: uses 1/4 of your ingredients, needs 0 extra, 1 step — below the previous one because it uses fewer of your ingredients
+**3. Omelet for Leftovers (Omurice)** — `ar_ylwbZEdf8zK8ZA6pqy15Wll6YtZyG2G`
+- Uses: egg, onion, tomato, rice
+- Missing: butter, bell pepper, zucchini, mushroom, ketchup, bacon, paprika
+- Steps: 2 · Why here: uses 4/4 of your ingredients, needs 7 extra, 2 steps — below the previous one because it needs more extra ingredients
 
-**4. Homemade Stewed Tomatoes** — `ar_s.Y.9gQPj8/UboVuA9QPvWkqexshTE.`
-- Uses: tomato
-- Missing: nothing beyond staples
-- Not used: egg, onion, rice
-- Steps: 1 · Why here: uses 1/4 of your ingredients, needs 0 extra, 1 step — tied on everything; ordered by ID
+**4. Turkey Meatball Vindaloo** — `fn_Z8iATJKOvt1aLJVdw1DFqPxUlKbxwe.`
+- Uses: egg, onion, tomato, rice
+- Missing: ground turkey, breadcrumb, cilantro, ginger, olive oil, bell pepper, hot madras curry powder
+- Steps: 3 · Why here: uses 4/4 of your ingredients, needs 7 extra, 3 steps — below the previous one because it has more steps
 
-**5. Soft Hard-Boiled Eggs** — `ar_t2AIs6xJeb9OlevKR7GSKwx4mklPPCe`
-- Uses: egg
-- Missing: nothing beyond staples
-- Not used: onion, tomato, rice
-- Steps: 1 · Why here: uses 1/4 of your ingredients, needs 0 extra, 1 step — tied on everything; ordered by ID
+**5. Imitation Meatloaf** — `ar_q3kO3yCalJEVIp74kLkkcxHp6izs7zi`
+- Uses: egg, onion, tomato, rice
+- Missing: dry brown lentils, wheat germ, dry bread crumb, thyme, hot sauce, ketchup, soy sauce, mozzarella cheese
+- Steps: 3 · Why here: uses 4/4 of your ingredients, needs 8 extra, 3 steps — below the previous one because it needs more extra ingredients
 
 _Matching is by ingredient name only — you didn't give quantities, so I haven't checked whether you have enough of each._
 
@@ -88,16 +87,6 @@ _Matching is by ingredient name only — you didn't give quantities, so I haven'
     "add_exclude": [
       "eggs"
     ]
-  },
-  "match": {
-    "have": null,
-    "add_have": [],
-    "remove_have": [],
-    "prefer": "fewest_missing",
-    "max_missing": null,
-    "must_use_all": false,
-    "n": 5,
-    "new_request": false
   }
 }
 ```
@@ -107,40 +96,35 @@ _Matching is by ingredient name only — you didn't give quantities, so I haven'
 
 **Your ingredients (normalised):** onion, tomato, rice
 **Hard constraints:** excludes **peanuts** (checked every ingredient line against 4 peanut terms); excludes **egg** (checked every ingredient line against 9 egg terms); at most 6 instruction steps
-**Ranking:** fewest extra ingredients → most of your ingredients used → fewest steps (salt, pepper and water are assumed staples and not counted as missing)
+**Ranking:** most of your ingredients used → fewest extra ingredients → fewest steps (salt, pepper and water are assumed staples and not counted as missing)
 _Note: 'eggs' conflicts with your exclusion (egg), so I removed it from your available ingredients._
 
 26,732 recipes satisfy every constraint and use at least one of your ingredients. Top 5:
 
-**1. Homemade Stewed Tomatoes** — `ar_s.Y.9gQPj8/UboVuA9QPvWkqexshTE.`
-- Uses: tomato
-- Missing: nothing beyond staples
-- Not used: onion, rice
-- Steps: 1 · Why here: Top match: uses 1/3 of your ingredients, needs 0 extra, 1 step.
+**1. Easy Red Rice** — `ar_HEANjerxzzD5N/d0QMF7jOsTplW.f1K`
+- Uses: onion, tomato, rice
+- Missing: olive oil, chicken broth, basil
+- Steps: 1 · Why here: Top match: uses 3/3 of your ingredients, needs 3 extra, 1 step.
 
-**2. Sun-dried Tomatoes II** — `ar_uBCUvjuuCrntPa57pw4TzLRAU/YE2DK`
-- Uses: tomato
-- Missing: nothing beyond staples
-- Not used: onion, rice
-- Steps: 1 · Why here: uses 1/3 of your ingredients, needs 0 extra, 1 step — tied on everything; ordered by ID
+**2. Zucchini Saute** — `ar_J/illFyDAANk7X1GwnmkQ4iMZPDTBmO`
+- Uses: onion, tomato, rice
+- Missing: vegetable oil, zucchini, bell pepper
+- Steps: 2 · Why here: uses 3/3 of your ingredients, needs 3 extra, 2 steps — below the previous one because it has more steps
 
-**3. Perfect Steamed Rice** — `epi_.vfNcqqph.q4sRuaY8I/DopYilvhONy`
-- Uses: rice
-- Missing: nothing beyond staples
-- Not used: onion, tomato
-- Steps: 1 · Why here: uses 1/3 of your ingredients, needs 0 extra, 1 step — tied on everything; ordered by ID
+**3. Mexican Rice I** — `ar_tlxZ5TF3/OeA94/bLSh51tLF//pNk3.`
+- Uses: onion, tomato, rice
+- Missing: vegetable oil, cumin, chili powder
+- Steps: 2 · Why here: uses 3/3 of your ingredients, needs 3 extra, 2 steps — tied on everything; ordered by ID
 
-**4. Steamed Jasmine Rice** — `epi_3CGbKsbV.FR48TBGFbnWwUNK0q8zwtK`
-- Uses: rice
-- Missing: nothing beyond staples
-- Not used: onion, tomato
-- Steps: 1 · Why here: uses 1/3 of your ingredients, needs 0 extra, 1 step — tied on everything; ordered by ID
+**4. Black Beans and Rice** — `fn_RwGqUrp5Mxzf/f5nCKmr0MofUtRB0Oy`
+- Uses: onion, tomato, rice
+- Missing: black bean, vegetable oil, okra
+- Steps: 2 · Why here: uses 3/3 of your ingredients, needs 3 extra, 2 steps — tied on everything; ordered by ID
 
-**5. Chopstick Ready Rice** — `epi_DVsbqba5h4pGcFv/S38G7ujxy22cLCe`
-- Uses: rice
-- Missing: nothing beyond staples
-- Not used: onion, tomato
-- Steps: 1 · Why here: uses 1/3 of your ingredients, needs 0 extra, 1 step — tied on everything; ordered by ID
+**5. Vary Aminanana (Collard Greens and Rice)** — `ar_wA.9BnVROfR6gjMSi2k5C7WoEoLYWOK`
+- Uses: onion, tomato, rice
+- Missing: olive oil, ginger, collard greens
+- Steps: 3 · Why here: uses 3/3 of your ingredients, needs 3 extra, 3 steps — below the previous one because it has more steps
 
 _Matching is by ingredient name only — you didn't give quantities, so I haven't checked whether you have enough of each._
 
@@ -159,7 +143,7 @@ _Matching is by ingredient name only — you didn't give quantities, so I haven'
   "constraints": {
     "add_exclude": [],
     "remove_exclude": [],
-    "max_steps": 6,
+    "max_steps": null,
     "clear_max_steps": false
   },
   "match": {

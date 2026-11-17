@@ -71,7 +71,7 @@ Say *show 2* for the full recipe, *more* for more results, or add a restriction.
   },
   "substitute": {
     "recipe_ref": "focus",
-    "remove": "heavy cream",
+    "remove": "cream",
     "restrictions": [
       "dairy"
     ],
@@ -84,27 +84,27 @@ Say *show 2* for the full recipe, *more* for more results, or add a restriction.
 **Bot:**
 
 ### Adapting: Creamy Pumpkin Pasta (`ar_v37bt9V/V/yvSeFEP6XWiOWN73ep9pC`)
-**Removing:** heavy cream — affected lines: '2/3 cup heavy whipping cream'
+**Removing:** cream — affected lines: '2/3 cup heavy whipping cream'
 **Your restrictions:** dairy
-**Role of heavy cream in this dish** _(general cooking knowledge, not from the dataset)_: richness (fat), body, and a smooth sauce that coats the food
+**Role of cream in this dish** _(general cooking knowledge, not from the dataset)_: richness (fat), body, and a smooth sauce that coats the food
 
-**Dataset evidence.** I found 22 recipes with similar titles. 4 of them use heavy cream and 18 don't.
+**Dataset evidence.** I found 22 recipes with similar titles. 7 of them use cream and 15 don't.
 
-| Substitute | Evidence | Similar recipes **without** heavy cream using it | Similar recipes **with** heavy cream using it | Anywhere in dataset without heavy cream |
+| Substitute | Evidence | Similar recipes **without** cream using it | Similar recipes **with** cream using it | Anywhere in dataset without cream |
 |---|---|---:|---:|---:|
-| olive oil + pasta water | direct | 7 (39%) | 25% | 31,650 |
-| coconut milk | limited | 1 (6%) | 0% | 1,324 |
-| coconut cream | limited | 1 (6%) | 0% | 96 |
-| cashews (blended) | limited | 1 (6%) | 0% | 543 |
-| broth thickened with cornstarch | co-occurs only | 6 (33%) | 75% | 12,604 |
-| soy milk | indirect | 0 (0%) | 0% | 240 |
-| almond milk | indirect | 0 (0%) | 0% | 266 |
+| olive oil + pasta water | direct | 6 (40%) | 29% | 31,398 |
+| coconut milk | limited | 1 (7%) | 0% | 1,313 |
+| coconut cream | limited | 1 (7%) | 0% | 87 |
+| cashews (blended) | limited | 1 (7%) | 0% | 532 |
+| broth thickened with cornstarch | co-occurs only | 4 (27%) | 71% | 12,385 |
+| soy milk | indirect | 0 (0%) | 0% | 236 |
+| almond milk | indirect | 0 (0%) | 0% | 264 |
 
-_How to read this: a substitute only counts as evidence if it is **more common** in the similar recipes that skip heavy cream than in the ones that use it. If it's equally common either way it just co-occurs (e.g. olive oil in pasta) and doesn't tell us it replaces anything._
+_How to read this: a substitute only counts as evidence if it is **more common** in the similar recipes that skip cream than in the ones that use it. If it's equally common either way it just co-occurs (e.g. olive oil in pasta) and doesn't tell us it replaces anything._
 
-Other ingredients that show up more often in the similar recipes *without* heavy cream (just a data signal, not necessarily a substitute): cinnamon (8 recipes), pumpkin puree (11 recipes), egg (4 recipes), vanilla extract (3 recipes), sage (3 recipes)
+Other ingredients that show up more often in the similar recipes *without* cream (just a data signal, not necessarily a substitute): egg (4 recipes), vanilla extract (3 recipes), ground ginger (3 recipes), cumin (3 recipes), white pepper (2 recipes)
 
-### Suggested change: replace heavy cream with **olive oil + pasta water**
+### Suggested change: replace cream with **olive oil + pasta water**
 Supporting recipes (similar dishes that do this):
 - `ar_WNqifUmN8xhR/bA1mSeti.ZtxCn0/FW` — Pumpkin Pasta: uses _'1 tablespoon olive oil'_
 - `ar_qcaXgvRsaURz35dwoz2rMhpCSYlt0vG` — Frugal Pumpkin Pasta: uses _'2 tablespoons olive oil'_
@@ -124,21 +124,17 @@ Supporting recipes (similar dishes that do this):
 - 9 ounces penne pasta
 - 6 ounces bacon, cut into strips
 - 1 tablespoon chopped fresh parsley
-- 2-3 tablespoons olive oil, emulsified with reserved starchy pasta water
-- 1 tablespoon nutritional yeast, or more to taste
+- 2 tablespoons olive oil (for sauce), plus reserved pasta water as needed to emulsify
+- 2 tablespoons nutritional yeast (or more to taste)
 
 **Revised instructions**
 1. Heat oil in a pot over medium heat; cook and stir onion until slightly tender, about 3 minutes. Add pumpkin and garlic; continue cooking for 3 minutes. Add chicken stock and nutmeg; bring to a boil. Reduce heat to medium-low, cover, and simmer until pumpkin is tender, about 10 minutes more.
 2. Bring a large pot of lightly salted water to a boil; add penne and cook, stirring occasionally, until tender yet firm to the bite, about 11 minutes. Drain and transfer to serving bowls.
-3. Mix bacon and parsley into pumpkin mixture; cook, stirring frequently, until bacon is cooked, 2 to 5 minutes. Add the olive oil and a splash of reserved pasta water, stirring to emulsify, and cook until heated through, about 2 minutes more. Spoon sauce over pasta and top with nutritional yeast.
+3. Mix bacon and parsley into pumpkin mixture; cook, stirring frequently, until bacon is cooked, 2 to 5 minutes. Add 2 tablespoons olive oil and a splash of reserved pasta water, whisking to emulsify, and cook until heated through, about 2 minutes more. Spoon sauce over pasta and top with nutritional yeast.
 
 **What will probably change** _(prediction - not tested, and not stated in the dataset)_
-- The olive oil‑pasta‑water emulsion will give a lighter, silkier sauce rather than the rich, thick mouthfeel of heavy cream.
-- Nutritional yeast provides a cheesy, umami flavor but lacks the melt and texture of Parmesan.
-- Overall the dish remains creamy‑sounding while being dairy‑free, though it may be slightly less indulgent.
-- ⚠️ Olive oil cannot be whipped; the sauce relies on emulsifying with starchy pasta water, so reserve enough cooking water before draining.
-- ⚠️ Nutritional yeast does not melt like Parmesan; the topping will be more powdery and may require extra seasoning to achieve desired flavor.
-- ⚠️ If the sauce seems too thin, add a bit more pasta water or a drizzle of olive oil to reach desired consistency.
+- The sauce will be lighter and less velvety than a cream‑based version, with a subtle olive‑oil richness and a slightly nutty, cheesy note from the nutritional yeast. The pasta may feel a bit silkier from the starch‑water emulsion, but overall the dish will be less heavy and have a more pronounced pumpkin‑and‑bacon flavor.
+- ⚠️ Nutritional yeast does not melt like Parmesan, so the topping will be more powdery and less gooey. The olive‑oil‑and‑pasta‑water emulsion may be thinner than a cream sauce; whisk quickly to achieve a smooth coating. If you omit the reserved pasta water, the sauce may separate.
 
 _Safety note: I checked the new ingredient list against my keyword lists for your restrictions and found nothing, but that is not a medical guarantee. Always check packaged ingredient labels for allergens._
 

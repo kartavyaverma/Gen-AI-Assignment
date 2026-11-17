@@ -142,6 +142,12 @@ Rules:
 - If the last intent was "match" and the user changes the ranking ("rank by fewest steps instead",
   "fewest missing first") or adds/removes a constraint, keep intent "match" and set "prefer" or the
   constraint. Do NOT switch to "stats".
+- "prefer" is "max_used" by default. That order already breaks ties by fewest extra ingredients and
+  then fewest steps. So if the user asks to use as many of their ingredients as possible, it stays
+  "max_used" even when they also say "fewest extra ingredients" or "prefer recipes that need the
+  fewest additional ingredients" (that part is the tie-breaker).
+  Only pick "fewest_missing" or "fewest_steps" when the user makes that the MAIN ranking ("fewest
+  missing first", "rank by fewest steps instead").
 - Diet words go into add_exclude EXACTLY as the user said them: "vegan", "vegetarian",
   "gluten-free", "dairy", "nuts", "halal". Never expand them yourself (the program knows that
   vegan also means no fish, shellfish and honey).
